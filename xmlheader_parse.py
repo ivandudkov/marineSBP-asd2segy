@@ -5,7 +5,7 @@ import xml.etree.ElementTree as ET
 import asd
 import auxillary
     
-def xml_size(buffer):
+def get_xml_size(buffer):
 
     buffer = buffer
     loop = True
@@ -29,12 +29,18 @@ def get_xml_root(buffer, xml_size):
     
     return xml_root
 
-def parse_xml_root(asd_obj, xml_root):
-    pass
+def parse_xml_header(asd_obj, buffer):
+    
+    asd_file_buffer = buffer[asd_obj.start_byte:asd_obj.end_byte+1]
+    
+    xml_size = get_xml_size(asd_file_buffer)
+    asd_obj.xml_size = xml_size
+    
+    xml_root = get_xml_root(asd_file_buffer, xml_size)
+    
+    return(xml_root)
+    
+    
 
-
-
-######
-filepath = ''
 
 
