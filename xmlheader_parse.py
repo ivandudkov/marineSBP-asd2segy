@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 import xml.etree.ElementTree as ET
 
 import asd
-import auxillary
+from auxillary import MotionData, Installation, HeadingData, PositionData,Speed
     
 def get_xml_size(buffer):
 
@@ -37,6 +37,8 @@ def parse_xml_header(asd_obj, buffer):
     asd_obj.xml_size = xml_size
     
     xml_root = get_xml_root(asd_file_buffer, xml_size)
+    
+    
     
     return(xml_root)
     

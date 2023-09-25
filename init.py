@@ -19,7 +19,7 @@ with open(acf_file, 'rb') as f1:
 for asd_obj in asd_obj_list[0:1]:
     xml_root = xmlheader_parse.parse_xml_header(asd_obj, buffer)
     
-# for child in xml_root[1][2]:
-#     print(child.tag, child.attrib)
+for child in xml_root:
+    print(child.tag, child.attrib)
     
-print(xml_root[1][1][0].text)
+# print(xml_root[1][1][0].tag)
