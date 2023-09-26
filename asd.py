@@ -2,6 +2,9 @@ import os
 
 import idxfile_parse
 import xmlheader_parse
+from classes_from_xml import Installation, MotionData, HeadingData,\
+                             PositionData, SpeedCourseData, DepthData,\
+                             PS3Config, GeneralSettings
 
 class ASDfile():
     """A class representing ASD file"""
@@ -17,23 +20,18 @@ class ASDfile():
         self.xml_size = 0
         self.datablock_size = 0
         
+        # AUX
+        self.installation = Installation()
+        self.motion = MotionData()
+        self.heading = HeadingData()
+        self.position = PositionData()
+        self.speed_course = SpeedCourseData()
+        self.depths = []
         
-        install_calibrate = ''
-        offsets = []
+        self.ps3config = PS3Config()
+        self.general = GeneralSettings()
         
-        self.aux_base_time = ''
-        self.motion_data = []
-        self.heading_data = []
-        self.pos_data = []
-        self.speed_course = []
-        self.depth_data = []
-        
-        self.config = []
-        
-        self.general = []
-        self.adc = []
-        
-        self.ping_list = []
+        self.soundings = []  # soundings, rawdata and targets
         
     def get_xml_size(self, buffer):
         asd_file_buffer = buffer[self.start_byte:self.end_byte+1]

@@ -1,12 +1,12 @@
 import os
 import datetime
 import numpy as np
-
+from dataclasses import dataclass, field
 
 class Installation:
     
     def __init__(self) -> None:
-        self.calibrdate = datetime.datetime()  # python dataclass, UTC timezone
+        self.calibrdate = ''  # python dataclass, UTC timezone
         
         # Offsets, m
         self.sys_z = float()
@@ -21,24 +21,13 @@ class Installation:
         self.tx_z = float()
         self.tx_yaw = float()
         self.tx_pitch = float()
-        self.tx_roll = float()
-
-class AuxData:
-    """Positions, Motions, Depth"""
-    
-    def __init__(self):
-        basetime_tag = ''  # posix-time
-        
-        motion_data = []
-        heading_data = []
-        position_data = []
-        speedcourse_data = []
-        depth_data = []  
+        self.tx_roll = float() 
         
 class MotionData:
     
     def __init__(self) -> None:
         self.name = str()
+        self.basetime_tag = float()
         
         # Offsets
         self.z = float()
@@ -54,22 +43,24 @@ class MotionData:
         self.all_plausible = bool()
         self.quality_plausible = list()
         
-        self.heave = np.array()  # m
-        self.roll = np.array()  # rad
-        self.pitch = np.array()  # rad
+        self.heave = np.empty((2,1))  # m
+        self.roll = np.empty((2,1))  # rad
+        self.pitch = np.empty((2,1))  # rad
         
 class HeadingData:
     
     def __init__(self) -> None:
+        self.basetime_tag = float()
         self.all_plausible = bool()
         self.quality_plausible = list()
         
-        self.heading = np.array()  # deg or rad???
+        self.heading = np.empty((2,1))  # deg or rad???
 
 class PositionData:
     
     def __init__(self) -> None:
         self.name = str()
+        self.basetime_tag = float()
         
         # Offsets, m
         self.z = float()
@@ -81,13 +72,14 @@ class PositionData:
         self.all_plausible = bool()
         self.quality_plausible = list()
         
-        self.lat = np.array()
-        self.lon = np.array()
+        self.lat = np.empty((2,1))
+        self.lon = np.empty((2,1))
 
 class SpeedCourseData:
     
     def __init__(self) -> None:
         self.name = str()
+        self.basetime_tag = float()
         
         # Offsets, m
         self.z = float()
@@ -97,17 +89,18 @@ class SpeedCourseData:
         self.all_plausible = bool()
         self.quality_plausible = list()
         
-        self.cog = np.array()  # course over ground, deg?
-        self.sog = np.array()  # speed over ground, knots
+        self.cog = np.empty((2,1))  # course over ground, deg?
+        self.sog = np.empty((2,1))  # speed over ground, knots
         
 class DepthData:
     def __init__(self) -> None:
         self.name = str()
+        self.basetime_tag = float()
         
         self.all_plausible = bool()
         self.quality_plausible = list()
         
-        self.depth = np.array()  # m
+        self.depth = np.empty((2,1))  # m
 
 
 class PS3Config:
@@ -162,7 +155,7 @@ class Sounding:
     
     def __init__(self) -> None:
         self.ident_no = int()
-        self.datetime = datetime.datetime()  # UTC timezone
+        self.datetime = ''  # UTC timezone
         self.time_trg = float()  # POSIX time reference tag. self.datetime and self.time_trg the same
         # it is preferrable to use time trg, because it has .6f sec precision, while datetime has time up to secs
         
@@ -198,6 +191,55 @@ class Sounding:
         self.rx_spreading = float()
         self.rx_absorption = float()
         
+        # PulseTargets
+        self.tg_no = int()
+        self.tg_bot_no = int()
+        self.tg_raytr_no = int()
+        self.tg_raytr_bot_no = int()
+        self.tg_list = []
+        
+        # PulseProfiles
+        self.prof_subident_no = int()
+        self.prof_shading = bool()
+        self.prof_pulse_no_ref = int()
+        self.prof_pulse_correl = bool()
+        self.prof_bandwidth = int()
+        self.pfor_direction = {'abs':bool(), 'n':float(), 'e': float(), 'd': float()}  # northing, easting, d??
+        
+        # Amplitudes info
+        self.ampl_scan_no = int()  # same as Sample No
+        self.ampl_starttime_rel2trg = float()
+        self.ampl_scan_interval = float()  # sample interval in secs
+        self.ampl_notation = str()
+        
+        # Binary Header
+        self.bh_sep = bytes()
+        self.bh_len = int()
+        self.bh_bytes_per_sample = int()
+        self.bh_sample_no = int()  # same as Scan No
+        self.bh_head_ver = str()
+        self.bh_data_type = str()
+        self.bh_ident_num = int()
+        self.bh_subident_num = int()
+        self.bh_flag = int()
+        
+        # Binary Data
+        self.real_part = []
+        self.imag_part = []
+        self.twtt = []
+        
+    
+@dataclass    
+class PulseTarget:
+    time: float  # Posix time
+    id: int
+    pulse_correl: bool
+    dist: float
+    type: str
+    ampl: float
+    ampldB: float
+    sn_ratio: float
+    classtg: str
         
         
         

@@ -3,6 +3,11 @@ from datetime import datetime, time, date
 from dataclasses import dataclass, field
 from collections import defaultdict, namedtuple
 
+def parse_bin_header():
+    pass
+
+
+
 def _util_gen_elements(fields, names):
     results = []
     name_index = 0

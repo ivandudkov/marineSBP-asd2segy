@@ -3,8 +3,7 @@ from dataclasses import dataclass, field
 import xml.etree.ElementTree as ET
 
 import asd
-from auxillary import MotionData, Installation, HeadingData, PositionData,Speed
-    
+
 def get_xml_size(buffer):
 
     buffer = buffer
