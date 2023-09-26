@@ -1,51 +1,111 @@
 import os
+import datetime
+import numpy as np
 
+
+class Installation:
+    
+    def __init__(self) -> None:
+        self.calibrdate = datetime.datetime()  # python dataclass, UTC timezone
+        
+        # Offsets, m
+        self.sys_z = float()
+        self.sys_x = float()
+        self.sys_y = float()
+        self.sys_yaw = float()
+        self.sys_pitch = float()
+        self.sys_roll = float()
+        
+        self.tx_x = float()
+        self.tx_y = float()
+        self.tx_z = float()
+        self.tx_yaw = float()
+        self.tx_pitch = float()
+        self.tx_roll = float()
 
 class AuxData:
     """Positions, Motions, Depth"""
     
     def __init__(self):
-        pass
-    
-
+        basetime_tag = ''  # posix-time
+        
+        motion_data = []
+        heading_data = []
+        position_data = []
+        speedcourse_data = []
+        depth_data = []  
+        
 class MotionData:
     
     def __init__(self) -> None:
+        self.name = str()
         
-        self.quality_no_items = None
-        self.all_plausible = None
-        self.heave = None
-        self.roll = None
-        self.pitch = None
+        # Offsets
+        self.z = float()
+        self.x = float()
+        self.y = float()
+        self.yaw = float()
+        self.sys_pitch = float()
+        self.sys_roll = float()
+        
+        self.applied_latency = float()
+        self.status = float()
+        
+        self.all_plausible = bool()
+        self.quality_plausible = list()
+        
+        self.heave = np.array()  # m
+        self.roll = np.array()  # rad
+        self.pitch = np.array()  # rad
         
 class HeadingData:
     
     def __init__(self) -> None:
-        pass
-    
-class SpeedCourseData:
-    def __init__(self) -> None:
-        pass
+        self.all_plausible = bool()
+        self.quality_plausible = list()
+        
+        self.heading = np.array()  # deg or rad???
 
+class PositionData:
+    
+    def __init__(self) -> None:
+        self.name = str()
+        
+        # Offsets, m
+        self.z = float()
+        self.x = float()
+        self.y = float()
+        self.latency = float()
+        self.quality = int()
+
+        self.all_plausible = bool()
+        self.quality_plausible = list()
+        
+        self.lat = np.array()
+        self.lon = np.array()
+
+class SpeedCourseData:
+    
+    def __init__(self) -> None:
+        self.name = str()
+        
+        # Offsets, m
+        self.z = float()
+        self.x = float()
+        self.y = float()
+
+        self.all_plausible = bool()
+        self.quality_plausible = list()
+        
+        self.cog = np.array()  # course over ground, deg?
+        self.sog = np.array()  # speed over ground, knots
+        
 class DepthData:
     def __init__(self) -> None:
-        pass
-class Installation:
-    
-    def __init__(self) -> None:
-        self.calibrdate = ''  # python dataclass, UTC timezone
+        self.name = str()
         
-        # Offsets in m
-        self.sys_z = None
-        self.sys_x = None
-        self.sys_y = None
-        self.sys_yaw = None
-        self.sys_pitch = None
-        self.sys_roll = None
+        self.all_plausible = bool()
+        self.quality_plausible = list()
         
-        self.tx_x = None
-        self.tx_y = None
-        self.tx_z = None
-        self.tx_yaw = None
-        self.tx_pitch = None
-        self.tx_roll = None
+        self.depth = np.array()  # m
+
