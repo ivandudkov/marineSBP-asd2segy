@@ -109,3 +109,95 @@ class DepthData:
         
         self.depth = np.array()  # m
 
+
+class PS3Config:
+    """Parastore config part"""
+    
+    def __init__(self) -> None:
+        self.bo_mode = int()  # bo for boat?
+        self.bo_mode_name = str()
+        self.ctrl_setting = {'min': int(), 'max': int()}
+        self.tracking_mode = str()
+        self.penetration = int()
+        
+        self.draught = {'source': str()}
+        self.tx_seq = {'mode': str()}
+        self.src_level = {'mode': str(), 'tx_power_man': float()}
+        self.trg = {'trg_mode': str()}
+        self.pulse_len = {'mode': str(), 'length_man': float()}  # pulse length in sec?
+        self.pulse_shape = {'mode': str()}
+        
+        self.carrier_freq = {'req_phf': int(), 'req_slf': int()}
+        self.beam_steering = {'mode': str(), 'roll_steer': float(), 'pitch_steer': float()}
+        self.tx_beam_width = {'mode': str()}
+        self.rx_beam_width = {'mode': str()}
+        self.rx_band_width = {'mode': str()}
+        
+        self.rx_ampl = {'mode': str(), 'gain': float(), 'gain_shift': float()}  # receiver amplification
+        self.depth_source = str()
+        self.sv_source = {'c_keel': str(), 'c_mean': str()}
+        self.profile_mode = str()
+        self.target_settings = {'wc_targets_on': str(), 'pulse_correlation_on': str(), 
+                                'target_tpe_sel': str(), 'target_tpe_on': str(), 
+                                'target_tpe_limit': int()}
+        
+        
+class GeneralSettings:
+    """C(sv)-mean, C(sv)-keel, analogue-digital converter (ADC) settings"""
+    
+    def __init__(self) -> None:
+        self.sv_mean = float()
+        self.sv_keel = float()
+        
+        self.draught = float()
+        self.is_draught_corrected = bool()
+        
+        self.adc_sample_rate = int()
+        self.adc_scale_factor = float()
+        self.adc_range_min = int()
+        self.adc_range_max = int()
+        
+
+class Sounding:
+    
+    def __init__(self) -> None:
+        self.ident_no = int()
+        self.datetime = datetime.datetime()  # UTC timezone
+        self.time_trg = float()  # POSIX time reference tag. self.datetime and self.time_trg the same
+        # it is preferrable to use time trg, because it has .6f sec precision, while datetime has time up to secs
+        
+        self.freq_type = str()
+        self.no_hard_beam = int()
+        self.no_amplitudes = int()
+        self.overdrive = bool()
+        
+        # Tx Settings
+        self.tx_no_pulses = int()
+        self.heave_correction = int()
+        
+        self.voltage = float()
+        self.duty_cycle = float()
+        self.src_level = float()
+        
+        self.pulse_time = float()
+        self.pulse_len = float()
+        self.pulse_type = str()
+        self.pulse_shape = str()
+        self.phf = int()
+        self.slf = int()
+        self.shf = int()
+        self.freq_shift = int()
+        self.pulse_shading = int()
+        self.tx_direction = {'abs':bool(), 'n':float(), 'e': float(), 'd': float()}  # northing, easting, d??
+        
+        # Rx Settings
+        self.rx_signal_car_freq = int()
+        self.rx_gain = int()
+        self.rx_sample_rate = float()
+        self.rx_bandwidth = int()
+        self.rx_spreading = float()
+        self.rx_absorption = float()
+        
+        
+        
+        
