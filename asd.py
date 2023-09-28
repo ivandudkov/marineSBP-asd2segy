@@ -1,7 +1,7 @@
 import os
 
 import idxfile_parse
-import xmlheader_parse
+
 from classes_from_xml import Installation, MotionData, HeadingData,\
                              PositionData, SpeedCourseData, DepthData,\
                              PS3Config, GeneralSettings
@@ -20,13 +20,26 @@ class ASDfile():
         self.xml_size = 0
         self.datablock_size = 0
         
+        # Basic Info
+        self.xml_schema = ''
+        self.system = ''
+        self.cm_version = ''
+        self.spm_version = ''
+        self.tbf_version = ''
+        self.spmfpga_version = ''
+        self.dm80_version = ''
+        self.doc_daytime = ''
+        self.no_of_sounding = int()
+        self.reduced_asd = ''
+        
         # AUX
+        self.aux_base_time = float()
         self.installation = Installation()
         self.motion = MotionData()
         self.heading = HeadingData()
         self.position = PositionData()
         self.speed_course = SpeedCourseData()
-        self.depths = []
+        self.depths = []  # multiple Depth classes
         
         self.ps3config = PS3Config()
         self.general = GeneralSettings()

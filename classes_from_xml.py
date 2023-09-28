@@ -27,21 +27,20 @@ class MotionData:
     
     def __init__(self) -> None:
         self.name = str()
-        self.basetime_tag = float()
         
         # Offsets
         self.z = float()
         self.x = float()
         self.y = float()
         self.yaw = float()
-        self.sys_pitch = float()
-        self.sys_roll = float()
+        self.pitch = float()
+        self.roll = float()
         
         self.applied_latency = float()
         self.status = float()
         
         self.all_plausible = bool()
-        self.quality_plausible = list()
+        self.quality = list()
         
         self.heave = np.empty((2,1))  # m
         self.roll = np.empty((2,1))  # rad
@@ -50,9 +49,8 @@ class MotionData:
 class HeadingData:
     
     def __init__(self) -> None:
-        self.basetime_tag = float()
         self.all_plausible = bool()
-        self.quality_plausible = list()
+        self.quality = list()
         
         self.heading = np.empty((2,1))  # deg or rad???
 
@@ -60,7 +58,6 @@ class PositionData:
     
     def __init__(self) -> None:
         self.name = str()
-        self.basetime_tag = float()
         
         # Offsets, m
         self.z = float()
@@ -70,7 +67,7 @@ class PositionData:
         self.quality = int()
 
         self.all_plausible = bool()
-        self.quality_plausible = list()
+        self.quality = list()
         
         self.lat = np.empty((2,1))
         self.lon = np.empty((2,1))
@@ -79,7 +76,6 @@ class SpeedCourseData:
     
     def __init__(self) -> None:
         self.name = str()
-        self.basetime_tag = float()
         
         # Offsets, m
         self.z = float()
@@ -87,7 +83,7 @@ class SpeedCourseData:
         self.y = float()
 
         self.all_plausible = bool()
-        self.quality_plausible = list()
+        self.quality = list()
         
         self.cog = np.empty((2,1))  # course over ground, deg?
         self.sog = np.empty((2,1))  # speed over ground, knots
@@ -95,10 +91,9 @@ class SpeedCourseData:
 class DepthData:
     def __init__(self) -> None:
         self.name = str()
-        self.basetime_tag = float()
         
         self.all_plausible = bool()
-        self.quality_plausible = list()
+        self.quality = list()
         
         self.depth = np.empty((2,1))  # m
 

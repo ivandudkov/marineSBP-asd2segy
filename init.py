@@ -1,4 +1,6 @@
 import os
+import numpy as np
+import matplotlib.pyplot as plt
 
 import asd
 import xmlheader_parse
@@ -8,18 +10,32 @@ idx_file = r'D:\aa_yandexcloud\InspectingP70Data\P70_data\SEB\PS3SLF_2021-09-17T
 acf_file = r'D:\aa_yandexcloud\InspectingP70Data\P70_data\SEB\PS3SLF_2021-09-17T110351Z_00047728.asd.acf'
 
 asd_obj_list = asd.ASDfile.create_from_idx_file(idx_file)
-
-for asd_obj in asd_obj_list[0:2]:
-    print(asd_obj.acf_name)
-
+asd_obj = asd_obj_list[0]
 
 with open(acf_file, 'rb') as f1:
     buffer = f1.read()
 
-for asd_obj in asd_obj_list[0:1]:
-    xml_root = xmlheader_parse.parse_xml_header(asd_obj, buffer)
+xml_root = xmlheader_parse.parse_xml_header2(asd_obj, buffer)
+print(xml_root[1][1][1].tag) 
+print(xml_root[1][1][1].attrib)  
+print(xml_root[1][1][1].text)  
+
+print('________________________________')
+
+xmlheader_parse.parse_xml_header(asd_obj, buffer)
+
+print(f'{asd_obj.heading.quality}')
+
+plt.plot(asd_obj.motion.roll[:,1], asd_obj.motion.roll[:,0], color='green')
+# plt.plot(asd_obj.motion.pitch[:,1], asd_obj.motion.pitch[:,0], color='red')
+# plt.plot(asd_obj.motion.heave[:,1], asd_obj.motion.heave[:,0], color='blue')
+# plt.plot(asd_obj.heading.heading[:,1], asd_obj.heading.heading[:,0], color='brown')
+# plt.show()
+
+for asd_obj in asd_obj_list:
+    xmlheader_parse.parse_xml_header(asd_obj, buffer)
     
-for child in xml_root:
-    print(child.tag, child.attrib)
-    
-# print(xml_root[1][1][0].tag)
+# for asd_obj in asd_obj_list:
+      
+#     plt.plot(asd_obj.motion.heave[:,1], asd_obj.motion.heave[:,0], color='blue')
+#     plt.show()
