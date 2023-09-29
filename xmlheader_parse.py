@@ -341,7 +341,20 @@ def parse_xml_header(asd_obj: asd.ASDfile, buffer):
                 direction=target_root[0].attrib
             )
             sounding.tg_list.append(pulse_target)
-        
+            
+        # Parse profiles
+        sounding.prof_subident_no = int(sounding_root[3].attrib['subIdentNo'])
+        sounding.prof_shading = int(sounding_root[3].attrib['shading'])
+        sounding.prof_pulse_no_ref = int(sounding_root[3].attrib['pulseNoRef'])
+        sounding.prof_pulse_correl = sounding_root[3].attrib['pulseCorrelationOn']
+        sounding.prof_bandwidth = int(sounding_root[3].attrib['bandwidth'])
+        sounding.prof_direction = sounding_root[3][0].attrib
+
+        # Parse amplitudes
+        sounding.ampl_scan_no = int(sounding_root[3][1].attrib['noScans'])
+        sounding.ampl_starttime = sounding.time_trg + float(sounding_root[3][1].attrib['startTimeRel2TRG'])
+        sounding.ampl_scan_interval = float(sounding_root[3][1].attrib['scanInterval'])
+        sounding.ampl_notation = sounding_root[3][1].attrib['notation']
         
         return sounding
     

@@ -198,11 +198,11 @@ class Sounding:
         self.prof_pulse_no_ref = int()
         self.prof_pulse_correl = bool()
         self.prof_bandwidth = int()
-        self.pfor_direction = {'abs':bool(), 'n':float(), 'e': float(), 'd': float()}  # north, east, down
+        self.prof_direction = {'abs':bool(), 'n':float(), 'e': float(), 'd': float()}  # north, east, down
         
         # Amplitudes info
         self.ampl_scan_no = int()  # same as Sample No
-        self.ampl_starttime_rel2trg = float()
+        self.ampl_starttime = float()
         self.ampl_scan_interval = float()  # sample interval in secs
         self.ampl_notation = str()
         

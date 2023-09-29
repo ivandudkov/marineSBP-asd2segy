@@ -24,7 +24,7 @@ print('________________________________')
 
 xmlheader_parse.parse_xml_header(asd_obj, buffer)
 
-print(asd_obj.soundings[0].tg_list[0])
+print(asd_obj.soundings[0].ampl_scan_no)
 # plt.plot(asd_obj.motion.roll[:,1], asd_obj.motion.roll[:,0], color='green')
 # plt.plot(asd_obj.motion.pitch[:,1], asd_obj.motion.pitch[:,0], color='red')
 # plt.plot(asd_obj.motion.heave[:,1], asd_obj.motion.heave[:,0], color='blue')
