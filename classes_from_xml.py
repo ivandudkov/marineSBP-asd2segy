@@ -64,13 +64,12 @@ class PositionData:
         self.x = float()
         self.y = float()
         self.latency = float()
-        self.quality = int()
+        self.quality_tag = int()
 
         self.all_plausible = bool()
         self.quality = list()
         
-        self.lat = np.empty((2,1))
-        self.lon = np.empty((2,1))
+        self.latlon = np.empty((2,1))
 
 class SpeedCourseData:
     
@@ -121,7 +120,7 @@ class PS3Config:
         self.rx_beam_width = {'mode': str()}
         self.rx_band_width = {'mode': str()}
         
-        self.rx_ampl = {'mode': str(), 'gain': float(), 'gain_shift': float()}  # receiver amplification
+        self.rx_ampl = {'mode': 'manual', 'gain': '0.000000', 'gainShift': '00.000000'}  # receiver amplification
         self.depth_source = str()
         self.sv_source = {'c_keel': str(), 'c_mean': str()}
         self.profile_mode = str()
@@ -149,7 +148,7 @@ class GeneralSettings:
 class Sounding:
     
     def __init__(self) -> None:
-        self.ident_no = int()
+        self.ident_no = str()
         self.datetime = ''  # UTC timezone
         self.time_trg = float()  # POSIX time reference tag. self.datetime and self.time_trg the same
         # it is preferrable to use time trg, because it has .6f sec precision, while datetime has time up to secs
@@ -171,16 +170,16 @@ class Sounding:
         self.pulse_len = float()
         self.pulse_type = str()
         self.pulse_shape = str()
-        self.phf = int()
-        self.slf = int()
-        self.shf = int()
+        self.phf_freq = int()
+        self.slf_freq = int()
+        self.shf_freq = int()
         self.freq_shift = int()
         self.pulse_shading = int()
         self.tx_direction = {'abs':bool(), 'n':float(), 'e': float(), 'd': float()}  # northing, easting, d??
         
         # Rx Settings
         self.rx_signal_car_freq = int()
-        self.rx_gain = int()
+        self.rx_gain = float()
         self.rx_sample_rate = float()
         self.rx_bandwidth = int()
         self.rx_spreading = float()
@@ -199,7 +198,7 @@ class Sounding:
         self.prof_pulse_no_ref = int()
         self.prof_pulse_correl = bool()
         self.prof_bandwidth = int()
-        self.pfor_direction = {'abs':bool(), 'n':float(), 'e': float(), 'd': float()}  # northing, easting, d??
+        self.pfor_direction = {'abs':bool(), 'n':float(), 'e': float(), 'd': float()}  # north, east, down
         
         # Amplitudes info
         self.ampl_scan_no = int()  # same as Sample No
@@ -227,14 +226,15 @@ class Sounding:
 @dataclass    
 class PulseTarget:
     time: float  # Posix time
-    id: int
-    pulse_correl: bool
+    index: int
+    pulse_correl: str
     dist: float
     type: str
     ampl: float
     ampldB: float
     sn_ratio: float
     classtg: str
+    direction: dict
         
         
         

@@ -149,10 +149,202 @@ def parse_xml_header(asd_obj: asd.ASDfile, buffer):
     def parse_position(asd_obj: asd.ASDfile, pos_root):
         tg_no = pos_root[0].attrib['noItems']
         qual_no = pos_root[1].attrib['noItems']
-        head_no = pos_root[2].attrib['noItems']
-        
-        if tg_no == qual_no and tg_no == head_no:
+        lat_no = pos_root[2].attrib['noItems']
+        lon_no = pos_root[3].attrib['noItems']
+        if tg_no == qual_no and tg_no == lat_no and tg_no == lon_no:
             pass
         else:
-            RuntimeWarning('Num of tg_no or qual_no and head_no are not equal')
+            RuntimeWarning('Num some position data_no is not equal')
         
+        # parse base info
+        asd_obj.position.name = pos_root.attrib['name']
+        asd_obj.position.x = float(pos_root.attrib['xOffset'])
+        asd_obj.position.y = float(pos_root.attrib['yOffset'])
+        asd_obj.position.z = float(pos_root.attrib['zOffset'])
+        asd_obj.position.latency = float(pos_root.attrib['latency'])
+        asd_obj.position.quality_tag = int(pos_root.attrib['quality'])
+        
+        # parse data
+        asd_obj.position.all_plausible = pos_root[1].attrib['allPlausible']
+        asd_obj.position.quality = [x for x in pos_root[1].text.split(' ') if len(x) != 0]
+        
+        latlon_array = np.ones((int(tg_no),3))
+        latlon_array[:,0] = [float(x)*180/np.pi for x in pos_root[2].text.split(' ') if len(x) != 0]
+        latlon_array[:,1] = [float(x)*180/np.pi for x in pos_root[3].text.split(' ') if len(x) != 0]
+        latlon_array[:,2] = [asd_obj.aux_base_time + float(x) for x in pos_root[0].text.split(' ') if len(x) != 0]
+        
+        asd_obj.position.latlon = latlon_array
+        
+    parse_position(asd_obj, xml_root[1][2])
+    
+    
+    def parse_speedcourse(asd_obj, cogsog_root):
+        tg_no = cogsog_root[0].attrib['noItems']
+        qual_no = cogsog_root[1].attrib['noItems']
+        cog_no = cogsog_root[2].attrib['noItems']
+        sog_no = cogsog_root[3].attrib['noItems']
+        
+        if tg_no == qual_no and tg_no == cog_no and tg_no == sog_no:
+            pass
+        else:
+            RuntimeWarning('Num some speed_course data_no is not equal')
+        
+        # parse base
+        asd_obj.speed_course.name = cogsog_root.attrib['name']
+        asd_obj.speed_course.x = float(cogsog_root.attrib['xOffset'])
+        asd_obj.speed_course.y = float(cogsog_root.attrib['yOffset'])
+        asd_obj.speed_course.z = float(cogsog_root.attrib['zOffset'])
+        
+        # parse data
+        asd_obj.speed_course.all_plausible = cogsog_root[1].attrib['allPlausible']
+        asd_obj.speed_course.quality = [x for x in cogsog_root[1].text.split(' ') if len(x) != 0]
+        
+        cog_array = np.ones((int(tg_no),2))
+        cog_array[:,0] = [float(x) for x in cogsog_root[2].text.split(' ') if len(x) != 0]
+        cog_array[:,1] = [asd_obj.aux_base_time + float(x) for x in cogsog_root[0].text.split(' ') if len(x) != 0]
+        
+        sog_array = np.ones((int(tg_no),2))
+        sog_array[:,0] = [float(x) for x in cogsog_root[3].text.split(' ') if len(x) != 0]
+        sog_array[:,1] = [asd_obj.aux_base_time + float(x) for x in cogsog_root[0].text.split(' ') if len(x) != 0]
+        
+        asd_obj.speed_course.cog = cog_array
+        asd_obj.speed_course.sog = sog_array
+        
+    parse_speedcourse(asd_obj, xml_root[1][3])
+    
+    def parse_depthdata(depthdata_root):
+        # parse base
+        depth_data_obj = DepthData()
+        
+        depth_data_obj.name = depthdata_root.attrib['name']
+        depth_data_obj.all_plausible = depthdata_root[1].attrib['allPlausible']
+        depth_data_obj.quality = [x for x in depthdata_root[1].text.split(' ') if len(x) != 0]
+        
+        depth_array = np.ones((int(depthdata_root[0].attrib['noItems']), 2))
+        depth_array[:,0] = [float(x) for x in depthdata_root[2].text.split(' ') if len(x) != 0]
+        depth_array[:,1] = [asd_obj.aux_base_time + float(x) for x in depthdata_root[0].text.split(' ') if len(x) != 0]
+        depth_data_obj.depth = depth_array
+        
+        return depth_data_obj
+        
+    for depth_root in xml_root[1][4:]:
+        if 'depthData' in depth_root.tag:
+            depth_obj = parse_depthdata(depth_root)
+            asd_obj.depths.append(depth_obj)
+            
+    # parse PS3 Config
+    def parse_ps3config(asd_obj: asd.ASDfile, ps3config_root):
+        #parse base:
+        asd_obj.ps3config.bo_mode = int(ps3config_root.attrib['boMode'])
+        asd_obj.ps3config.bo_mode_name = ps3config_root.attrib['boModeName']
+        
+        asd_obj.ps3config.ctrl_setting['min'] = ps3config_root[0].attrib['min']
+        asd_obj.ps3config.ctrl_setting['max'] = ps3config_root[0].attrib['max']
+        asd_obj.ps3config.tracking_mode = ps3config_root[0].attrib['trackingWinMode']
+        asd_obj.ps3config.penetration = int(ps3config_root[0].attrib['penetration'])
+        
+        asd_obj.ps3config.draught = ps3config_root[1].attrib
+        asd_obj.ps3config.tx_seq = ps3config_root[2].attrib
+        asd_obj.ps3config.src_level = ps3config_root[3].attrib
+        asd_obj.ps3config.trg = ps3config_root[4].attrib
+        asd_obj.ps3config.pulse_len = ps3config_root[5].attrib
+        asd_obj.ps3config.pulse_shape = ps3config_root[6].attrib
+        
+        asd_obj.ps3config.carrier_freq = ps3config_root[7].attrib
+        asd_obj.ps3config.beam_steering = ps3config_root[8].attrib
+        
+        asd_obj.ps3config.tx_beam_width = ps3config_root[9].attrib
+        asd_obj.ps3config.rx_beam_width = ps3config_root[10].attrib
+        asd_obj.ps3config.rx_band_width = ps3config_root[11].attrib
+        
+        asd_obj.ps3config.rx_ampl = ps3config_root[12].attrib
+        asd_obj.ps3config.depth_source = ps3config_root[13].attrib
+        asd_obj.ps3config.sv_source = ps3config_root[14].attrib
+        asd_obj.ps3config.profile_mode = ps3config_root[15].attrib
+        asd_obj.ps3config.target_settings = ps3config_root[16].attrib
+        
+    parse_ps3config(asd_obj, xml_root[2])
+    
+    # Parse general
+    def parse_general(asd_obj: asd.ASDfile, general_root):
+        asd_obj.general.sv_mean = float(general_root.attrib['cMean'])
+        asd_obj.general.sv_keel = float(general_root.attrib['cKeel'])
+        
+        asd_obj.general.draught = float(general_root.attrib['draught'])
+        asd_obj.general.is_draught_corrected = general_root.attrib['isDraughtCorrected']
+        
+        asd_obj.general.adc_sample_rate = int(general_root[0].attrib['ADCSampleRate'])
+        asd_obj.general.adc_scale_factor = float(general_root[0].attrib['ADCScaleFactor'])
+        asd_obj.general.adc_range_min = int(general_root[0].attrib['ADCRangeMin'])
+        asd_obj.general.adc_range_max = int(general_root[0].attrib['ADCRangeMax'])
+        
+    parse_general(asd_obj, xml_root[3])
+    
+    # Parse soundings
+    def parse_sounding(sounding_root):
+        sounding = Sounding()
+        # pulsetarget = PulseTarget()
+        
+        # Base parsing
+        sounding.ident_no = sounding_root.attrib['identNo']
+        sounding.datetime = sounding_root.attrib['time']
+        sounding.time_trg = float(sounding_root.attrib['timeTRG'])
+        sounding.freq_type = sounding_root.attrib['freqType']
+        sounding.no_hard_beam = int(sounding_root.attrib['noHardBeams'])
+        sounding.no_amplitudes = int(sounding_root.attrib['noAmplitudes'])
+        sounding.overdrive = sounding_root.attrib['overdrive']
+        
+        # Parse Tx Settings
+        sounding.tx_no_pulses = int(sounding_root[0].attrib['noPulses'])
+        sounding.heave_correction = int(sounding_root[0].attrib['heaveCorrection'])
+        sounding.voltage = float(sounding_root[0].attrib['voltage'])
+        sounding.duty_cycle = float(sounding_root[0].attrib['dutyCycle'])
+        sounding.src_level = float(sounding_root[0].attrib['srcLevel'])
+        
+        # Parse Pulse
+        sounding.pulse_time = sounding.time_trg + float(sounding_root[0][0].attrib['timeRel2TRG'])
+        sounding.pulse_len = float(sounding_root[0][0].attrib['length'])
+        sounding.pulse_type = sounding_root[0][0].attrib['type']
+        sounding.pulse_shape = sounding_root[0][0].attrib['shape']
+        sounding.phf_freq = int(sounding_root[0][0].attrib['phf'])
+        sounding.slf_freq = int(sounding_root[0][0].attrib['slf'])
+        sounding.shf_freq = int(sounding_root[0][0].attrib['shf'])
+        sounding.freq_shift = int(sounding_root[0][0].attrib['freqShift'])
+        sounding.pulse_shading = int(sounding_root[0][0].attrib['shading'])
+        sounding.tx_direction = sounding_root[0][0][0].attrib
+        
+        # Parse Rx
+        sounding.rx_signal_car_freq = int(sounding_root[1].attrib['signalCarrierFreq'])
+        sounding.rx_gain = float(sounding_root[1].attrib['gain'])
+        sounding.rx_sample_rate = float(sounding_root[1].attrib['sampleRate'])
+        sounding.rx_bandwidth = int(sounding_root[1].attrib['bandwidth'])
+        sounding.rx_spreading = float(sounding_root[1].attrib['spreadingLoss'])
+        sounding.rx_absorption = float(sounding_root[1].attrib['absorption'])
+        
+        # Parse targets
+        sounding.tg_no = int(sounding_root[2].attrib['noTargets'])
+        sounding.tg_bot_no = int(sounding_root[2].attrib['noBottomTargets'])
+        sounding.tg_raytr_no = int(sounding_root[2].attrib['noRayTracedTargets'])
+        sounding.tg_raytr_bot_no = int(sounding_root[2].attrib['noRayTracedBottomTargets'])
+        
+        for target_root in sounding_root[2][:]:
+            pulse_target = PulseTarget(
+                time=float(target_root.attrib['time']),
+                index=int(target_root.attrib['index']),
+                pulse_correl=target_root.attrib['pulseCorrelationOn'],
+                dist=float(target_root.attrib['dist']),
+                type=target_root.attrib['type'],
+                ampl=float(target_root.attrib['ampl']),
+                ampldB=float(target_root.attrib['ampldB']),
+                sn_ratio=float(target_root.attrib['snRatio']),
+                classtg=target_root.attrib['class'],
+                direction=target_root[0].attrib
+            )
+            sounding.tg_list.append(pulse_target)
+        
+        
+        return sounding
+    
+    for root in xml_root[3:]:
+        if 'sounding' in root.tag:
+            asd_obj.soundings.append(parse_sounding(root))
