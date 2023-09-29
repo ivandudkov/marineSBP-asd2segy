@@ -218,9 +218,7 @@ class Sounding:
         self.bh_flag = int()
         
         # Binary Data
-        self.real_part = []
-        self.imag_part = []
-        self.twtt = []
+        self.data_array = np.ones((1,3))
         
     
 @dataclass    

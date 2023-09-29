@@ -29,18 +29,6 @@ def get_xml_root(buffer, xml_size):
     xml_root = ET.fromstring(xml_string)
     
     return xml_root
-
-def parse_xml_header2(asd_obj: asd.ASDfile, buffer):
-    
-    asd_file_buffer = buffer[asd_obj.start_byte:asd_obj.end_byte+1]
-    
-    xml_size = get_xml_size(asd_file_buffer)
-    asd_obj.xml_size = xml_size
-    
-    xml_root = get_xml_root(asd_file_buffer, xml_size)
-    
-    return(xml_root)
-    
     
 def parse_xml_header(asd_obj: asd.ASDfile, buffer):
     
@@ -61,7 +49,7 @@ def parse_xml_header(asd_obj: asd.ASDfile, buffer):
     asd_obj.spmfpga_version = basic_dict['spmFPGAVersion']
     asd_obj.dm80_version = basic_dict['DM80Version']
     asd_obj.doc_daytime = basic_dict['docDaytime']
-    asd_obj.no_of_sounding = int(basic_dict['noOfSoundings'])
+    asd_obj.no_of_soundings = int(basic_dict['noOfSoundings'])
     asd_obj.reduced_asd = basic_dict['reducedASD']
     
     # Parse Installation

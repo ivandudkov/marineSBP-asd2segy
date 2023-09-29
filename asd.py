@@ -18,6 +18,7 @@ class ASDfile():
         self.end_byte = 0
         self.size = 0
         self.xml_size = 0
+        self.bin_size = 0
         self.datablock_size = 0
         
         # Basic Info
@@ -29,7 +30,7 @@ class ASDfile():
         self.spmfpga_version = ''
         self.dm80_version = ''
         self.doc_daytime = ''
-        self.no_of_sounding = int()
+        self.no_of_soundings = int()
         self.reduced_asd = ''
         
         # AUX
@@ -50,6 +51,12 @@ class ASDfile():
         asd_file_buffer = buffer[self.start_byte:self.end_byte+1]
         xml_size = xmlheader_parse.xml_size(asd_file_buffer)
         self.xml_size = xml_size
+        
+    def get_binary_size(self):
+        if self.xml_size != 0:
+            self.bin_size = self.size - self.xml_size
+        else:
+            raise RuntimeError('XML size is 0. Please, find xml size first')
     
     
     @staticmethod
