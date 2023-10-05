@@ -38,7 +38,7 @@ for obj in asd_obj_list[0:1]:
 
     for sounding in obj.soundings[0:1]:
         print(sounding.ampl_time_rel2trg)
-        print(sounding.ampl_scan_interval)
+        print(sounding.ampl_scan_interval*1000)
         proc_trace.proc_trace(sounding)
         
         
