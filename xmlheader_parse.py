@@ -56,12 +56,13 @@ def parse_xml_header(asd_obj: asd.ASDfile, buffer):
     install_dict = xml_root[0].attrib
 
     asd_obj.installation.calibrdate = install_dict['calibrDate']
-    asd_obj.installation.sys_x = float(install_dict['xOffset'])
-    asd_obj.installation.sys_y = float(install_dict['yOffset'])
-    asd_obj.installation.sys_z = float(install_dict['zOffset'])
-    asd_obj.installation.sys_yaw = float(install_dict['yawOffset'])
-    asd_obj.installation.sys_pitch = float(install_dict['pitchOffset'])
-    asd_obj.installation.sys_roll = float(install_dict['rollOffset'])
+    asd_obj.installation.sysz = float(install_dict['sysZOffset'])
+    asd_obj.installation.x = float(install_dict['xOffset'])
+    asd_obj.installation.y = float(install_dict['yOffset'])
+    asd_obj.installation.z = float(install_dict['zOffset'])
+    asd_obj.installation.yaw = float(install_dict['yawOffset'])
+    asd_obj.installation.pitch = float(install_dict['pitchOffset'])
+    asd_obj.installation.roll = float(install_dict['rollOffset'])
     asd_obj.installation.tx_x = float(install_dict['tx_xOffset'])
     asd_obj.installation.tx_y = float(install_dict['tx_yOffset'])
     asd_obj.installation.tx_z = float(install_dict['tx_zOffset'])
@@ -101,8 +102,7 @@ def parse_xml_header(asd_obj: asd.ASDfile, buffer):
         data_array[:,1] = [start_time + interval*x for x in np.arange(0,no_scans,1)]
         
         return data_array
-    # newlist = [expression for item in iterable if condition == True]
-    
+
     motion_roll = xml_root[1][0][2]
     motion_pitch = xml_root[1][0][3]
     motion_heave = xml_root[1][0][1]
@@ -276,7 +276,7 @@ def parse_xml_header(asd_obj: asd.ASDfile, buffer):
         # Base parsing
         sounding.ident_no = sounding_root.attrib['identNo']
         sounding.datetime = sounding_root.attrib['time']
-        sounding.time_trg = float(sounding_root.attrib['timeTRG'])
+        sounding.trg_time = float(sounding_root.attrib['timeTRG'])
         sounding.freq_type = sounding_root.attrib['freqType']
         sounding.no_hard_beam = int(sounding_root.attrib['noHardBeams'])
         sounding.no_amplitudes = int(sounding_root.attrib['noAmplitudes'])
@@ -290,7 +290,7 @@ def parse_xml_header(asd_obj: asd.ASDfile, buffer):
         sounding.src_level = float(sounding_root[0].attrib['srcLevel'])
         
         # Parse Pulse
-        sounding.pulse_time = sounding.time_trg + float(sounding_root[0][0].attrib['timeRel2TRG'])
+        sounding.pulse_time_rel2trg = float(sounding_root[0][0].attrib['timeRel2TRG'])
         sounding.pulse_len = float(sounding_root[0][0].attrib['length'])
         sounding.pulse_type = sounding_root[0][0].attrib['type']
         sounding.pulse_shape = sounding_root[0][0].attrib['shape']
@@ -340,7 +340,7 @@ def parse_xml_header(asd_obj: asd.ASDfile, buffer):
 
         # Parse amplitudes
         sounding.ampl_scan_no = int(sounding_root[3][1].attrib['noScans'])
-        sounding.ampl_starttime = sounding.time_trg + float(sounding_root[3][1].attrib['startTimeRel2TRG'])
+        sounding.ampl_time_rel2trg = float(sounding_root[3][1].attrib['startTimeRel2TRG'])
         sounding.ampl_scan_interval = float(sounding_root[3][1].attrib['scanInterval'])
         sounding.ampl_notation = sounding_root[3][1].attrib['notation']
         

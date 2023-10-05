@@ -29,6 +29,7 @@ def parse_bin_header(asd_obj: ASDfile, buffer):
     if len(asd_obj.soundings) == no_of_soundings:
         pass
     else:
+        print(asd_obj.soundings)
         raise RuntimeError('Number of soundings does not equal num of sounding objects!')
     
     def read_bin_header(buffer_pos, buffer, sounding_obj: Sounding):
@@ -95,9 +96,8 @@ def parse_bin_header(asd_obj: ASDfile, buffer):
         for i in range(no_scans):
             sample = samp.unpack(buffer[buffer_pos:buffer_pos+samp.size])
             
-            data_array[i, 0] = sample[0]
-            data_array[i, 1] = sample[1]
-            data_array[i, 2] = i*sounding_obj.ampl_scan_interval
+            data_array[i, 0] = sample[0]  # Real part
+            data_array[i, 1] = sample[1]  # Imag part
             
             buffer_pos = buffer_pos + samp.size
         

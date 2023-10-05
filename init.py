@@ -7,6 +7,7 @@ import asd
 import xmlheader_parse
 import idxfile_parse
 import ping_datablock_parse
+import proc_trace
 
 def plot_seismic_traces():
     pass
@@ -21,25 +22,52 @@ asd_obj = asd_obj_list[0]
 with open(acf_file, 'rb') as f1:
     buffer = f1.read()
 
-print(len(buffer))
-
 print('________________________________')
 
+# xmlheader_parse.parse_xml_header(asd_obj, buffer)
+# ping_datablock_parse.parse_bin_header(asd_obj, buffer)
 
-xmlheader_parse.parse_xml_header(asd_obj, buffer)
-ping_datablock_parse.parse_bin_header(asd_obj, buffer)
 
-print(asd_obj.soundings[0].data_array)
-# plt.plot(asd_obj.motion.roll[:,1], asd_obj.motion.roll[:,0], color='green')
-# plt.plot(asd_obj.motion.pitch[:,1], asd_obj.motion.pitch[:,0], color='red')
-# plt.plot(asd_obj.motion.heave[:,1], asd_obj.motion.heave[:,0], color='blue')
-# plt.plot(asd_obj.heading.heading[:,1], asd_obj.heading.heading[:,0], color='brown')
-# plt.show()
-# start_time = time.time()
-# for asd_obj in asd_obj_list:
-#     xmlheader_parse.parse_xml_header(asd_obj, buffer)
-    # plt.plot(asd_obj.position.latlon[:,1], asd_obj.position.latlon[:,0], color='green')
-# end_time = time.time()
-# print(f'Elapsed time: {end_time - start_time:.2f} secs')
-# # print(asd_obj.position.latlon)
-# plt.show()
+traces = []
+start_times = []
+
+num_of_traces = 0
+for obj in asd_obj_list[0:1]:
+    xmlheader_parse.parse_xml_header(obj, buffer)
+    ping_datablock_parse.parse_bin_header(obj, buffer)
+
+    for sounding in obj.soundings[0:1]:
+        print(sounding.ampl_time_rel2trg)
+        print(sounding.ampl_scan_interval)
+        proc_trace.proc_trace(sounding)
+        
+        
+    #     start_times.append(sounding.ampl_starttimerel2trg)
+    #     traces.append(sounding.data_array)
+    #     num_of_traces += 1
+        
+    # if num_of_traces >= 3000:
+    #     break
+
+# print(len(traces))
+# print(traces[0])
+# trace_array = np.zeros((len(traces), 1000))
+
+# for i, trace in enumerate(traces):
+#     trace_array[i,0:np.shape(trace)[0]] = trace[:]
+
+
+def plot_rawtraces(raw_traces):
+    clip = 1e+4
+    vmin, vmax = -clip, clip
+
+    # Figure
+    figsize=(15, 15)
+    fig, axs = plt.subplots(nrows=1, ncols=1, figsize=figsize, facecolor='w', edgecolor='k',
+                        squeeze=False,
+                        sharex=True)
+    axs = axs.ravel()
+    im = axs[0].imshow(raw_traces.T, cmap=plt.cm.seismic, vmin=vmin, vmax=vmax)
+    plt.show()
+    
+# plot_rawtraces(trace_array[:])

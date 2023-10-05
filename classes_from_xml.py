@@ -8,17 +8,18 @@ class Installation:
     def __init__(self) -> None:
         self.calibrdate = ''  # python dataclass, UTC timezone
         
+        self.sysz = float()  # the height in [m] of the systems ref point above the ship's keel
         # Offsets, m
-        self.sys_z = float()
-        self.sys_x = float()
-        self.sys_y = float()
-        self.sys_yaw = float()
-        self.sys_pitch = float()
-        self.sys_roll = float()
+        self.z = float()  # positive downward
+        self.x = float()  # positive bow
+        self.y = float()  # positive starboard
+        self.yaw = float()  # positive if turned to starboard
+        self.pitch = float()  # positive if bow is up
+        self.roll = float()  # positive if starboard is down
         
-        self.tx_x = float()
-        self.tx_y = float()
-        self.tx_z = float()
+        self.tx_x = float()  # positive downward
+        self.tx_y = float()  # positive bow
+        self.tx_z = float()  # positive starboard
         self.tx_yaw = float()
         self.tx_pitch = float()
         self.tx_roll = float() 
@@ -150,7 +151,7 @@ class Sounding:
     def __init__(self) -> None:
         self.ident_no = str()
         self.datetime = ''  # UTC timezone
-        self.time_trg = float()  # POSIX time reference tag. self.datetime and self.time_trg the same
+        self.trg_time = float()  # POSIX time reference tag. self.datetime and self.time_trg the same
         # it is preferrable to use time trg, because it has .6f sec precision, while datetime has time up to secs
         
         self.freq_type = str()
@@ -166,7 +167,7 @@ class Sounding:
         self.duty_cycle = float()
         self.src_level = float()
         
-        self.pulse_time = float()
+        self.pulse_time_rel2trg = float()
         self.pulse_len = float()
         self.pulse_type = str()
         self.pulse_shape = str()
@@ -202,7 +203,7 @@ class Sounding:
         
         # Amplitudes info
         self.ampl_scan_no = int()  # same as Sample No
-        self.ampl_starttime = float()
+        self.ampl_time_rel2trg = float()
         self.ampl_scan_interval = float()  # sample interval in secs
         self.ampl_notation = str()
         
@@ -218,7 +219,7 @@ class Sounding:
         self.bh_flag = int()
         
         # Binary Data
-        self.data_array = np.ones((1,3))
+        self.data_array = np.ones((1,2)) # 0 - real part, 1 - imag part
         
     
 @dataclass    
