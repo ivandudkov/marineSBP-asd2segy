@@ -23,39 +23,56 @@ def resample_trace(ampls, dt, new_dt):
     return ampls_resampled
 
 def shift_data_to_zero_start(sample_st, sample_dt, sample_array):
+    # As it turned out, the sample start time given
+    # relative to zero, i.e. sample_st/sample_dt is integer (like 198.999999 i.e. 199)
     index_start = int(np.ceil(sample_st/sample_dt))
     
     sample_times = [sample_st + x*sample_dt for x in np.arange(sample_array.shape[0])]
-    sample_times_shifted = [x*sample_dt for x in np.arange(sample_array.shape[0] + index_start)]
+    sample_times_shifted = [x*sample_dt for x in np.arange(sample_array.shape[0] + int(sample_st/sample_dt))]
     
     func = interpolate.interp1d(sample_times, sample_array, fill_value=0)
-    shifted_samples = func(sample_times_shifted)
+    shifted_samples = func(sample_times_shifted[index_start:])
     
-    return shifted_samples, sample_times_shifted
+    print(sample_st/sample_dt)
+    
+    # plot_signal(sample_array, 
+    #             sample_times, 
+    #             shifted_samples, 
+    #             sample_times_shifted[index_start:])
+    
+    return shifted_samples, sample_times_shifted, index_start
         
 def proc_trace(sounding: Sounding, delay=0, tracelen=200):
-    complex_trace = sounding.data_array[:,0] + sounding.data_array[:,1]  # complex array
+    # complex_trace = sounding.data_array[:,0] + sounding.data_array[:,1]  # complex array
+    # complex_trace = sounding.data_array[:,0]
+
     
-    sample_interval = sounding.ampl_scan_interval
-    start_time = sounding.ampl_time_rel2trg
+    sample_st = sounding.ampl_time_rel2trg
+    sample_dt = sounding.ampl_scan_interval
     
-    sample_times = [start_time + x*sample_interval for x in np.arange(complex_trace.shape[0])]
+    resampl_real = resample_trace(sounding.data_array[:,0], sample_dt, sample_dt/4)
+    resampl_imag = resample_trace(sounding.data_array[:,1], sample_dt, sample_dt/4)
     
-    data_array = np.ones((np.shape(complex_trace)[0], 2))
-    data_array[:, 0] = complex_trace
-    data_array[:, 1] = sample_times
+    complex_trace = resampl_real + resampl_imag
+    # As it turned out, the sample start time given
+    # relative to zero, i.e. sample_st/sample_dt is integer (like 198.999999 i.e. 199)
+    index_start = int(np.ceil(sample_st/sample_dt))
     
-    index_start = int(np.ceil(start_time/sample_interval))
-    new_sample_times = [x*sample_interval for x in np.arange(complex_trace.shape[0] + int(start_time/sample_interval))]
+    ampl_new = []
+    sample_times = [sample_st + x*sample_dt for x in np.arange(complex_trace.shape[0]+index_start)]
     
-    f = interpolate.interp1d(data_array[:,1], data_array[:,0], fill_value=0)
+    for i in np.arange(complex_trace.shape[0]+index_start):
+        if i < index_start:
+            ampl_new.append(0.0)
+        else:
+            ampl_new.append(complex_trace[i-index_start])
+
+    return ampl_new, sample_times
     
-    print(index_start)
-    print(start_time/sample_interval)
-    print(1/12207)
-    new_ampls = f(new_sample_times[index_start:])
-    
-    # plot_signal(data_array[:,0], data_array[:,1], new_ampls, new_sample_times[index_start:])
+    # plot_signal(complex_trace, 
+    #             sample_times[index_start:], 
+    #             ampl_new, 
+    #             sample_times)
     
 
 

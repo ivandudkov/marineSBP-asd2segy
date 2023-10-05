@@ -5,7 +5,7 @@ import segyio
 
 
 def plot_rawtraces(raw_traces):
-    clip = 1e+4
+    clip = 1e+3
     vmin, vmax = -clip, clip
 
     # Figure
