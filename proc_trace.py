@@ -56,8 +56,8 @@ def proc_trace(sounding: Sounding, delay=0, tracelen=200):
     abs_time = sounding.trg_time
     surf_ss = sounding.
     
-    resampl_real = resample_trace(sounding.data_array[:,0], sample_dt, sample_dt/4)
-    resampl_imag = resample_trace(sounding.data_array[:,1], sample_dt, sample_dt/4)
+    resampl_real = resample_trace(sounding.data_array[:,0], sample_dt, sample_dt)
+    resampl_imag = resample_trace(sounding.data_array[:,1], sample_dt, sample_dt)
     
     complex_trace = resampl_real + resampl_imag
     # As it turned out, the sample start time given

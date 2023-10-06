@@ -17,8 +17,8 @@ idx_file = r'D:\aa_yandexcloud\InspectingP70Data\P70_data\SEB\PS3SLF_2021-09-17T
 acf_file = r'D:\aa_yandexcloud\InspectingP70Data\P70_data\SEB\PS3SLF_2021-09-17T110351Z_00047728.asd.acf'
 
 
-idx_file = r'D:\aa_yandexcloud\InspectingP70Data\P70_data\SEB\PS3SLF_2021-09-17T110351Z_00047728.asd.acf.idx'
-acf_file = r'D:\aa_yandexcloud\InspectingP70Data\P70_data\SEB\PS3SLF_2021-09-17T110351Z_00047728.asd.acf'
+idx_file = r'D:\aa_yandexcloud\InspectingP70Data\P70_data\SEB\PS3SLF_2022-06-17T054120Z_04061504.asd.acf.idx'
+acf_file = r'D:\aa_yandexcloud\InspectingP70Data\P70_data\SEB\PS3SLF_2022-06-17T054120Z_04061504.asd.acf'
 
 asd_obj_list = asd.ASDfile.create_from_idx_file(idx_file)
 asd_obj = asd_obj_list[0]
@@ -69,16 +69,17 @@ for obj in asd_obj_list[0:1]:
 
 
 def plot_rawtraces(raw_traces):
-    clip = 1e+4
-    vmin, vmax = -clip, clip
+    # clip = 1e+4
+    # vmin, vmax = -clip, clip
 
     # Figure
-    figsize=(15, 15)
+    figsize=(15, 20)
     fig, axs = plt.subplots(nrows=1, ncols=1, figsize=figsize, facecolor='w', edgecolor='k',
                         squeeze=False,
                         sharex=True)
     axs = axs.ravel()
-    im = axs[0].imshow(raw_traces[:,0,:].T, cmap=plt.cm.seismic, vmin=vmin, vmax=vmax)
+    im = axs[0].imshow(raw_traces[:,0,:].T, cmap=plt.cm.seismic)
+    # im = axs[0].imshow(raw_traces[:,0,:].T, cmap=plt.cm.seismic, vmin=vmin, vmax=vmax)
     plt.show()
     
 # plot_rawtraces(trace_array[:,:,:])
