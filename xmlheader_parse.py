@@ -297,7 +297,11 @@ def parse_xml_header(asd_obj: asd.ASDfile, buffer):
         sounding.phf_freq = int(sounding_root[0][0].attrib['phf'])
         sounding.slf_freq = int(sounding_root[0][0].attrib['slf'])
         sounding.shf_freq = int(sounding_root[0][0].attrib['shf'])
-        sounding.freq_shift = int(sounding_root[0][0].attrib['freqShift'])
+        
+        if 'freqShift' in sounding_root[0][0].attrib.keys():
+            sounding.freq_shift = int(sounding_root[0][0].attrib['freqShift'])
+        else:
+            pass
         sounding.pulse_shading = int(sounding_root[0][0].attrib['shading'])
         sounding.tx_direction = sounding_root[0][0][0].attrib
         

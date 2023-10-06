@@ -17,8 +17,8 @@ idx_file = r'D:\aa_yandexcloud\InspectingP70Data\P70_data\SEB\PS3SLF_2021-09-17T
 acf_file = r'D:\aa_yandexcloud\InspectingP70Data\P70_data\SEB\PS3SLF_2021-09-17T110351Z_00047728.asd.acf'
 
 
-idx_file = r'D:\aa_yandexcloud\InspectingP70Data\P70_data\SEB\PS3SLF_2021-09-17T110351Z_00047728.asd.acf.idx'
-acf_file = r'D:\aa_yandexcloud\InspectingP70Data\P70_data\SEB\PS3SLF_2021-09-17T110351Z_00047728.asd.acf'
+idx_file = r'D:\aa_yandexcloud\InspectingP70Data\P70_data\SEB\PS3SLF_2022-06-17T054120Z_04061504.asd.acf.idx'
+acf_file = r'D:\aa_yandexcloud\InspectingP70Data\P70_data\SEB\PS3SLF_2022-06-17T054120Z_04061504.asd.acf'
 
 asd_obj_list = asd.ASDfile.create_from_idx_file(idx_file)
 asd_obj = asd_obj_list[0]
@@ -43,7 +43,7 @@ for obj in asd_obj_list[0:1000]:
     xmlheader_parse.parse_xml_header(obj, buffer)
     ping_datablock_parse.parse_bin_header(obj, buffer)
 
-    for sounding in obj.soundings:
+    for sounding in obj.soundings[:]:
         # print(sounding.ampl_time_rel2trg)
         # print(sounding.ampl_scan_interval*1000)
         ampls, times = proc_trace.proc_trace(sounding)
@@ -61,7 +61,7 @@ for obj in asd_obj_list[0:1000]:
 print(len(traces))
 print(traces[0].shape)
 
-trace_array = np.zeros((len(traces), 2, 8500))
+trace_array = np.zeros((len(traces), 2, 2500))
 print(trace_array.shape)
 for i, trace in enumerate(traces):
     trace_array[i,0,0:np.shape(trace)[0]] = trace[:,0]
@@ -69,16 +69,17 @@ for i, trace in enumerate(traces):
 
 
 def plot_rawtraces(raw_traces):
-    clip = 1e+4
-    vmin, vmax = -clip, clip
+    # clip = 1e+4
+    # vmin, vmax = -clip, clip
 
     # Figure
-    figsize=(15, 15)
+    figsize=(15, 20)
     fig, axs = plt.subplots(nrows=1, ncols=1, figsize=figsize, facecolor='w', edgecolor='k',
                         squeeze=False,
                         sharex=True)
     axs = axs.ravel()
-    im = axs[0].imshow(raw_traces[:,0,:].T, cmap=plt.cm.seismic, vmin=vmin, vmax=vmax)
+    im = axs[0].imshow(raw_traces[:,0,:].T, cmap=plt.cm.seismic)
+    # im = axs[0].imshow(raw_traces[:,0,:].T, cmap=plt.cm.seismic, vmin=vmin, vmax=vmax)
     plt.show()
     
-plot_rawtraces(trace_array[:,:,500:2000])
+plot_rawtraces(trace_array[:,:,:])
