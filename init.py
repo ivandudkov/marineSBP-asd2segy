@@ -46,7 +46,7 @@ for obj in asd_obj_list[0:1]:
     for sounding in obj.soundings[0:1]:
         # print(sounding.ampl_time_rel2trg)
         # print(sounding.ampl_scan_interval*1000)
-        ampls, times = proc_trace.proc_trace(sounding)
+        ampls, times = proc_trace.proc_trace(sounding, obj)
         
         data_array = np.ones((len(ampls), 2))
         data_array[:, 0] = ampls
