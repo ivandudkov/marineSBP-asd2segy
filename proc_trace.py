@@ -56,12 +56,25 @@ def proc_trace(sounding: Sounding, asd_obj: ASDfile, delay=0, tracelen=200):
     abs_time = sounding.trg_time
     surf_ss = asd_obj.general.sv_keel
     heave = asd_obj.motion.heave
-    print(heave)
+    heave_quality = asd_obj.motion.quality[:-1]
+    
+    for i, qual in enumerate(heave_quality):
+        if qual == 'p':
+            pass
+        else:
+            pass
+            # heave.pop(i)
+    heave_func = interpolate.interp1d(heave[:,1], heave[:,0], fill_value=0)
+    
+    # print(heave_func(abs_time+sample_st))
     
     resampl_real = resample_trace(sounding.data_array[:,0], sample_dt, sample_dt)
     resampl_imag = resample_trace(sounding.data_array[:,1], sample_dt, sample_dt)
     
-    complex_trace = np.zeros((resampl_real.shape()[0]), dtype=complex)
+    complex_trace = np.ones(resampl_real.shape, dtype=complex)
+    complex_trace.real = resampl_real
+    complex_trace.imag = resampl_imag
+
     # As it turned out, the sample start time given
     # relative to zero, i.e. sample_st/sample_dt is integer (like 198.999999 i.e. 199)
     index_start = int(np.ceil(sample_st/sample_dt))
@@ -69,19 +82,24 @@ def proc_trace(sounding: Sounding, asd_obj: ASDfile, delay=0, tracelen=200):
     ampl_new = []
     sample_times = [sample_st + x*sample_dt for x in np.arange(complex_trace.shape[0]+index_start)]
     
-    for i in np.arange(complex_trace.shape[0]+index_start):
+    
+    abs_value = np.sqrt(complex_trace.real**2 + complex_trace.imag**2)
+    
+    for i in np.arange(abs_value.shape[0]+index_start):
         if i < index_start:
             ampl_new.append(0.0)
         else:
-            ampl_new.append(complex_trace[i-index_start])
-
-    return ampl_new, sample_times
+            ampl_new.append(abs_value[i-index_start])
     
-    # plot_signal(complex_trace, 
+    # plot_signal(abs_value, 
     #             sample_times[index_start:], 
     #             ampl_new, 
     #             sample_times)
     
+    
+    
+    
+    return ampl_new, sample_times
 
 
 
