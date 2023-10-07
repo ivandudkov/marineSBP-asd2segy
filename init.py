@@ -39,14 +39,14 @@ delay = 0.010  # s; 10 ms
 trace_len = 0.15  # s; 150 ms
 
 num_of_traces = 0
-for obj in asd_obj_list[0:1000]:
+for obj in asd_obj_list[0:1]:
     xmlheader_parse.parse_xml_header(obj, buffer)
     ping_datablock_parse.parse_bin_header(obj, buffer)
 
-    for sounding in obj.soundings[:]:
+    for sounding in obj.soundings[0:1]:
         # print(sounding.ampl_time_rel2trg)
         # print(sounding.ampl_scan_interval*1000)
-        ampls, times = proc_trace.proc_trace(sounding)
+        ampls, times = proc_trace.proc_trace(sounding, obj)
         
         data_array = np.ones((len(ampls), 2))
         data_array[:, 0] = ampls
@@ -58,14 +58,14 @@ for obj in asd_obj_list[0:1000]:
     if num_of_traces >= 3000:
         break
     
-print(len(traces))
-print(traces[0].shape)
+# print(len(traces))
+# print(traces[0].shape)
 
-trace_array = np.zeros((len(traces), 2, 2500))
-print(trace_array.shape)
-for i, trace in enumerate(traces):
-    trace_array[i,0,0:np.shape(trace)[0]] = trace[:,0]
-    trace_array[i,1,0:np.shape(trace)[0]] = trace[:,1]
+# trace_array = np.zeros((len(traces), 2, 8500))
+# print(trace_array.shape)
+# for i, trace in enumerate(traces):
+#     trace_array[i,0,0:np.shape(trace)[0]] = trace[:,0]
+#     trace_array[i,1,0:np.shape(trace)[0]] = trace[:,1]
 
 
 def plot_rawtraces(raw_traces):
@@ -82,4 +82,4 @@ def plot_rawtraces(raw_traces):
     # im = axs[0].imshow(raw_traces[:,0,:].T, cmap=plt.cm.seismic, vmin=vmin, vmax=vmax)
     plt.show()
     
-plot_rawtraces(trace_array[:,:,:])
+# plot_rawtraces(trace_array[:,:,:])

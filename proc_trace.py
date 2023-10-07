@@ -40,15 +40,23 @@ def shift_data_to_zero_start(sample_st, sample_dt, sample_array):
     #             shifted_samples, 
     #             sample_times_shifted[index_start:])
     
+    
     return shifted_samples, sample_times_shifted, index_start
         
-def proc_trace(sounding: Sounding, delay=0, tracelen=200):
+def shift_trace_by_heave():
+    pass
+        
+def proc_trace(sounding: Sounding, asd_obj: ASDfile, delay=0, tracelen=200):
     # complex_trace = sounding.data_array[:,0] + sounding.data_array[:,1]  # complex array
     # complex_trace = sounding.data_array[:,0]
 
     
     sample_st = sounding.ampl_time_rel2trg
     sample_dt = sounding.ampl_scan_interval
+    abs_time = sounding.trg_time
+    surf_ss = asd_obj.general.sv_keel
+    heave = asd_obj.motion.heave
+    print(heave)
     
     resampl_real = resample_trace(sounding.data_array[:,0], sample_dt, sample_dt)
     resampl_imag = resample_trace(sounding.data_array[:,1], sample_dt, sample_dt)
