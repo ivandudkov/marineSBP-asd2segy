@@ -53,7 +53,7 @@ def proc_trace(sounding: Sounding, delay=0, tracelen=200):
     resampl_real = resample_trace(sounding.data_array[:,0], sample_dt, sample_dt)
     resampl_imag = resample_trace(sounding.data_array[:,1], sample_dt, sample_dt)
     
-    complex_trace = resampl_real + resampl_imag
+    complex_trace = np.zeros((resampl_real.shape()[0]), dtype=complex)
     # As it turned out, the sample start time given
     # relative to zero, i.e. sample_st/sample_dt is integer (like 198.999999 i.e. 199)
     index_start = int(np.ceil(sample_st/sample_dt))
