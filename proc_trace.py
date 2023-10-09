@@ -80,7 +80,7 @@ def proc_trace(sounding: Sounding, asd_obj: ASDfile, delay=0, tracelen=200):
     heave_func = interpolate.interp1d(heave[:,1], heave[:,0], fill_value=0)
     
     # print(heave_func(abs_time+sample_st))
-    sample_dt2 = sample_dt/4
+    sample_dt2 = sample_dt
     
     resampl_real = resample_trace(sounding.data_array[:,0], sample_dt, sample_dt2)
     resampl_imag = resample_trace(sounding.data_array[:,1], sample_dt, sample_dt2)
