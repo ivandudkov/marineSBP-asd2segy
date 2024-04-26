@@ -82,4 +82,4 @@ def plot_rawtraces(raw_traces):
     # im = axs[0].imshow(raw_traces[:,0,:].T, cmap=plt.cm.seismic, vmin=vmin, vmax=vmax)
     plt.show()
     
-# plot_rawtraces(trace_array[:,:,0:1600])
+plot_rawtraces(trace_array[:,:,0:1600])
