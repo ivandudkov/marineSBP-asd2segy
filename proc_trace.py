@@ -59,17 +59,17 @@ def get_polar_form(z):
     phase = np.angle(z)
     return (mag, phase)
   
-def proc_trace(sounding: Sounding, asd_obj: ASDfile, delay=0, tracelen=200):
-    # complex_trace = sounding.data_array[:,0] + sounding.data_array[:,1]  # complex array
-    # complex_trace = sounding.data_array[:,0]
-
+def proc_trace(sounding: Sounding, asd_obj: ASDfile, delay=0, tracelen=200, sample_dt=0):  # delay and tracelen in ms
     
-    sample_st = sounding.ampl_time_rel2trg
-    sample_dt = sounding.ampl_scan_interval
+    sample_st_source = sounding.ampl_time_rel2trg
+    sample_dt_source = sounding.ampl_scan_interval
     abs_time = sounding.trg_time
     surf_ss = asd_obj.general.sv_keel
     heave = asd_obj.motion.heave
     heave_quality = asd_obj.motion.quality[:-1]
+    
+    delay = delay
+    tracelen = tracelen
     
     for i, qual in enumerate(heave_quality):
         if qual == 'p':
@@ -80,23 +80,33 @@ def proc_trace(sounding: Sounding, asd_obj: ASDfile, delay=0, tracelen=200):
     heave_func = interpolate.interp1d(heave[:,1], heave[:,0], fill_value=0)
     
     # print(heave_func(abs_time+sample_st))
-    sample_dt2 = sample_dt
+    if sample_dt == 0:
+        sample_dt_new = sample_dt_source
+    else:
+        sample_dt_new = sample_dt/1000
     
-    resampl_real = resample_trace(sounding.data_array[:,0], sample_dt, sample_dt2)
-    resampl_imag = resample_trace(sounding.data_array[:,1], sample_dt, sample_dt2)
+    resampl_real = resample_trace(sounding.data_array[:,0], sample_dt_source, sample_dt_new)
+    resampl_imag = resample_trace(sounding.data_array[:,1], sample_dt_source, sample_dt_new)
     
-    # complex_trace = np.ones(resampl_real.shape, dtype=complex)
-    # complex_trace.real = resampl_real
-    # complex_trace.imag = resampl_imag
+    complex_trace = np.ones(sounding.data_array[:,0].shape, dtype=complex)
+    complex_trace.real = sounding.data_array[:,0]
+    complex_trace.imag = sounding.data_array[:,1]
+    
+    # Real part of the complex trace is an acoustic amplitude
+    amplitude_array = resampl_real
+    # absolute value of a complex trace - is a magnitude of a signal
+    magnitude_trace = np.abs(complex_trace)
+    # phase of a complex trace - is a phase of a signal at given point (in time)
+    phase_trace = np.angle(complex_trace, deg=True)
 
     # As it turned out, the sample start time given
     # relative to zero, i.e. sample_st/sample_dt is integer (like 198.999999 i.e. 199)
-    index_start = int(np.ceil(sample_st/sample_dt))
-    index_start_new = int(np.ceil(sample_st/sample_dt2))
+    index_start = int(np.ceil(sample_st_source/sample_dt_source))
+    index_start_new = int(np.ceil(sample_st_source/sample_dt_new))
     
     ampl_new = []
-    sample_times = [sample_st + x*sample_dt for x in np.arange(sounding.data_array[:,0].shape[0]+index_start)]
-    sample_times_new = [sample_st + x*sample_dt2 for x in np.arange(resampl_real.shape[0]+index_start_new)]
+    sample_times = [sample_st_source + x*sample_dt_source for x in np.arange(amplitude_array.shape[0]+index_start)]
+    sample_times_new = [sample_st_source + x*sample_dt_new for x in np.arange(amplitude_array.shape[0]+index_start_new)]
     
     # abs value = complex value magnitude
     # abs_value = np.sqrt(complex_trace.real**2 + complex_trace.imag**2)
@@ -107,18 +117,17 @@ def proc_trace(sounding: Sounding, asd_obj: ASDfile, delay=0, tracelen=200):
     # abs_value = rel_angles*abs_value
     # trace = abs_value*np.cos(rel_angles)
     
-    for i in np.arange(resampl_real.shape[0]+index_start_new):
+    for i in np.arange(amplitude_array.shape[0]+index_start_new):
         if i < index_start:
             ampl_new.append(0.0)
         else:
-            ampl_new.append(resampl_real[i-index_start_new])
+            ampl_new.append(amplitude_array[i-index_start_new])
 
-    plot_signal(sounding.data_array[:,0], 
-                sample_times[index_start:], 
-                ampl_new, 
-                sample_times_new)
+    # plot_signal(amplitude_array, 
+    #             sample_times[index_start:], 
+    #             ampl_new, 
+    #             sample_times_new)
     
-    return ampl_new, sample_times
-
+    return ampl_new, sample_times_new
 
 

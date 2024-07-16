@@ -28,7 +28,7 @@ def plot_rawtraces(raw_traces):
     plt.show()
 
 
-path = r'D:\aa_yandexcloud\InspectingP70Data\P70_data\Profile-0_W1_SLF2109171103_LL_car.sgy'
+path = r'C:\YandexDisk\MyProjects\InspectingP70Data\P70_data\Profile-0_W1_SLF2109171103_LL_car.sgy'
 
 
 with segyio.open(filename=path, mode="r",
@@ -44,11 +44,33 @@ with segyio.open(filename=path, mode="r",
     print(f'Sample count: {len(f.samples)}')
     print(f'Trace count: {f.tracecount}')
     
-    print(f'{f.bin}')
-    # print(f.text[0])
-    print(f.header)
-    print(f.trace)
     
+    # modes are: .trace, .header, .iline/xline, .fast/slow, .depth_slice
+    # .gather, .text, .bin
+    
+    # 2D seismic profiles are unstructured files
+    # .trace and .header are the only modes available for unstructured files
+    # traces are enumerated: 0..len(f.trace)
+    # .trace mode - offers raw adressing of traces as they are laid out in the file
+    # Reading a trace yields a numpy ndarray, and
+    # reading multiple traces yields a generator of ndarray's
+    
+    # .header mode - accessing items yield header objects instead of numpy ndarray
+    # Headers are dict-like objects, where
+    # keys are integers, seismic unix-style keys and segyio enums
+    
+    # print(f'{f.bin}')
+    # print(f.text[0])
+    print(f'DELAY (109 byte): {f.header[0]['109']}')
+    print(len(f.header))
+    print(len(f.trace))
+    print('\n')
+    print(f.trace)
+    print(f.header)
+    print(len(f.samples))
+    # print(type(np.fromiter(f.trace[:])))
+    print(np.fromiter(f.trace[:], dtype=np.dtype((float, len(f.samples)))))
+    plot_rawtraces(np.fromiter(f.trace[:], dtype=np.dtype((float, len(f.samples)))))
 
 print('\n_____SPEC____\n')
 spec = MySpec()

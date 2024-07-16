@@ -266,6 +266,7 @@ def parse_xml_header(asd_obj: asd.ASDfile, buffer):
         asd_obj.general.adc_range_min = int(general_root[0].attrib['ADCRangeMin'])
         asd_obj.general.adc_range_max = int(general_root[0].attrib['ADCRangeMax'])
         
+        
     parse_general(asd_obj, xml_root[3])
     
     # Parse soundings
