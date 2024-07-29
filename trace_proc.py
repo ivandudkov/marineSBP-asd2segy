@@ -3,7 +3,7 @@ from scipy import signal, interpolate
 import matplotlib.pyplot as plt
 
 from asd import ASDfile
-from classes_from_xml import Sounding
+from xml_classes import Sounding
 
 
 class Trace:

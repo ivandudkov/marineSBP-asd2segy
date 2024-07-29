@@ -4,21 +4,19 @@ import matplotlib.pyplot as plt
 import time
 
 import asd
-import xmlheader_parse
-import idxfile_parse
-import ping_datablock_parse
-import proc_trace
+import idxfile
+import trace_proc
 
 def plot_seismic_traces():
     pass
 
 
-idx_file = r'C:\YandexDisk\MyProjects\InspectingP70Data\P70_data\SEB\PS3SLF_2021-09-17T110351Z_00047728.asd.acf.idx'
-acf_file = r'C:\YandexDisk\MyProjects\InspectingP70Data\P70_data\SEB\PS3SLF_2021-09-17T110351Z_00047728.asd.acf'
+idx_file = r'D:\aa_yandexcloud\MyProjects\InspectingP70Data\P70_data\SEB\PS3SLF_2021-09-17T110351Z_00047728.asd.acf.idx'
+acf_file = r'D:\aa_yandexcloud\MyProjects\InspectingP70Data\P70_data\SEB\PS3SLF_2021-09-17T110351Z_00047728.asd.acf'
 
 
-idx_file = r'C:\YandexDisk\MyProjects\InspectingP70Data\P70_data\SEB\PS3SLF_2022-06-17T054120Z_04061504.asd.acf.idx'
-acf_file = r'C:\YandexDisk\MyProjects\InspectingP70Data\P70_data\SEB\PS3SLF_2022-06-17T054120Z_04061504.asd.acf'
+idx_file = r'D:\aa_yandexcloud\MyProjects\InspectingP70Data\P70_data\SEB\PS3SLF_2022-06-17T054120Z_04061504.asd.acf.idx'
+acf_file = r'D:\aa_yandexcloud\MyProjects\InspectingP70Data\P70_data\SEB\PS3SLF_2022-06-17T054120Z_04061504.asd.acf'
 
 asd_obj_list = asd.ASDfile.create_from_idx_file(idx_file)
 asd_obj = asd_obj_list[0]
@@ -41,13 +39,13 @@ trace_len = 0.15  # s; 150 ms
 
 num_of_traces = 0
 for obj in asd_obj_list[0:50]:
-    xmlheader_parse.parse_xml_header(obj, buffer)
-    ping_datablock_parse.parse_bin_header(obj, buffer)
+    asd.parse_xml_header(obj, buffer)
+    asd.parse_bin_header(obj, buffer)
 
     for sounding in obj.soundings[:]:
         print(sounding.ampl_time_rel2trg)
         print(sounding.ampl_scan_interval*1000)
-        ampls, times = proc_trace.proc_trace(sounding, obj, delay=1)
+        ampls, times = trace_proc.proc_trace(sounding, obj, delay=1)
         
         data_array = np.ones((len(ampls), 2))
         data_array[:, 0] = ampls
