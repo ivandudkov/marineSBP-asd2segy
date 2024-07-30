@@ -104,36 +104,67 @@ def proc_trace(sounding: Sounding, asd_obj: ASDfile, delay=0, sample_dt=0, trace
     ampl_time_rel2trg = sounding.ampl_time_rel2trg  # in secs
     ampl_scan_interval = sounding.ampl_scan_interval  # in secs
     trg_time = sounding.trg_time  # posix seconds, absolute time
-    sv_keel = asd_obj.general.sv_keel  # m/s
-    heave = asd_obj.motion.heave  # [[m],[posix seconds]]
-    heave_quality = asd_obj.motion.quality[:-1]
-    delay = delay/1000
-    tracelen = tracelen/1000
+    delay = delay/1000  # seconds
+    tracelen = tracelen/1000  # seconds
+    
+    centre_freq = 0
+    peak_amplitude = 0
+    pulse_shape = 0  # tapered or square
+    pulse_length = 0
+    pulse_bandwidth = 0
+    print(sounding.prof_shading)
+    print(sounding.freq_shift)
+    print(sounding.prof_bandwidth)
+    print(sounding.rx_signal_car_freq)
+    print(sounding.slf_freq)
+    print(sounding.src_level)
+    print(sounding.voltage)
+    
+    adc_scale_factor = asd_obj.general.adc_scale_factor
+    # print(adc_scale_factor)
     
     if sample_dt == 0:
         sample_dt = ampl_scan_interval
     else:
         sample_dt = sample_dt/1000
        
-         
+    # Heave part
+    sv_keel = asd_obj.general.sv_keel  # m/s
+    heave = asd_obj.motion.heave  # [[m],[posix seconds]]
+    heave_quality = asd_obj.motion.quality[:-1] 
     heave_func = interpolate.interp1d(heave[:,1], heave[:,0], fill_value=0)
-    # print(heave_func(abs_time+sample_st))
-        
+    heave_at_ampl_time = heave_func(trg_time + ampl_time_rel2trg)
+    heave_correction_secs = heave_at_ampl_time/sv_keel
+    # print(heave_at_ampl_time)
+    # print(heave_correction_secs)
+    
+    ampl_time_rel2trg_corr = ampl_time_rel2trg - heave_correction_secs
+    amplitude_data = (sounding.data_array[:,0]*sounding.data_array[:,1])*adc_scale_factor
+    
+    # compl_trace = complex_trace(sounding.data_array[:,0], sounding.data_array[:,1])
+    # amplitude_data = np.angle(compl_trace, deg=True)
+    # magnitude, phase = mag_phase(compl_trace)
+    # amplitude_data = magnitude*phase
+    
+    # amplitude_data = np.abs(compl_trace)
     
     # Real part of the complex trace is an acoustic amplitude
     # sounding.data_array[:,0] - real part of the complex trace, amplitude vallues
     # sounding.data_array[:,1] - imag part of the complex trace
     # Original Sample Times
-    sample_times = [ampl_time_rel2trg + x*ampl_scan_interval for x in np.arange(sounding.data_array[:,0].shape[0])]
-    
+    sample_times = [ampl_time_rel2trg_corr + x*ampl_scan_interval for x in np.arange(amplitude_data.shape[0])]
+    # print(sample_times)
     # Desired Sample Times
-    desired_sample_times = np.arange(delay,tracelen+sample_dt,sample_dt)
+    desired_sample_times = np.arange(delay,delay+tracelen+sample_dt,sample_dt)
     
     # Resample data again using desired Sample Times
-    func = interpolate.CubicSpline(sample_times, sounding.data_array[:,0], extrapolate=False)
+    func = interpolate.CubicSpline(sample_times, amplitude_data, extrapolate=False)
+    # func = interpolate.interp1d(sample_times, amplitude_data, fill_value=0)
     
     # Data at desired Sample Times and replace numpy 'nan' values by 0
     data_at_desired = np.nan_to_num(func(desired_sample_times))
+    # print(desired_sample_times)
+    # print(sample_times)
     
     return data_at_desired, desired_sample_times
 
