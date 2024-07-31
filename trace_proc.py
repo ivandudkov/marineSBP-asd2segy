@@ -112,13 +112,13 @@ def proc_trace(sounding: Sounding, asd_obj: ASDfile, delay=0, sample_dt=0, trace
     pulse_shape = 0  # tapered or square
     pulse_length = 0
     pulse_bandwidth = 0
-    print(sounding.prof_shading)
-    print(sounding.freq_shift)
-    print(sounding.prof_bandwidth)
-    print(sounding.rx_signal_car_freq)
-    print(sounding.slf_freq)
-    print(sounding.src_level)
-    print(sounding.voltage)
+    # print(sounding.prof_shading)
+    # print(sounding.freq_shift)
+    # print(sounding.prof_bandwidth)
+    # print(sounding.rx_signal_car_freq)
+    # print(sounding.slf_freq)
+    # print(sounding.src_level)
+    # print(sounding.voltage)
     
     adc_scale_factor = asd_obj.general.adc_scale_factor
     # print(adc_scale_factor)
@@ -134,14 +134,14 @@ def proc_trace(sounding: Sounding, asd_obj: ASDfile, delay=0, sample_dt=0, trace
     heave_quality = asd_obj.motion.quality[:-1] 
     heave_func = interpolate.interp1d(heave[:,1], heave[:,0], fill_value=0)
     heave_at_ampl_time = heave_func(trg_time + ampl_time_rel2trg)
-    heave_correction_secs = heave_at_ampl_time/sv_keel
+    heave_correction_secs = heave_at_ampl_time/sv_keel*2
     # print(heave_at_ampl_time)
     # print(heave_correction_secs)
     
     ampl_time_rel2trg_corr = ampl_time_rel2trg - heave_correction_secs
     amplitude_data = (sounding.data_array[:,0]*sounding.data_array[:,1])*adc_scale_factor
     
-    # compl_trace = complex_trace(sounding.data_array[:,0], sounding.data_array[:,1])
+    amplitude_data = complex_trace(sounding.data_array[:,0], sounding.data_array[:,1])
     # amplitude_data = np.angle(compl_trace, deg=True)
     # magnitude, phase = mag_phase(compl_trace)
     # amplitude_data = magnitude*phase
@@ -153,6 +153,7 @@ def proc_trace(sounding: Sounding, asd_obj: ASDfile, delay=0, sample_dt=0, trace
     # sounding.data_array[:,1] - imag part of the complex trace
     # Original Sample Times
     sample_times = [ampl_time_rel2trg_corr + x*ampl_scan_interval for x in np.arange(amplitude_data.shape[0])]
+    
     # print(sample_times)
     # Desired Sample Times
     desired_sample_times = np.arange(delay,delay+tracelen+sample_dt,sample_dt)

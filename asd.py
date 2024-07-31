@@ -110,7 +110,6 @@ def get_xml_size(buffer):
     buffer = buffer
     loop = True
     xml_size = 0
-
     # Scan XML length
     while loop:
         try:
@@ -135,7 +134,7 @@ def parse_xml_header(asd_obj: ASDfile, buffer):
     
     xml_size = get_xml_size(asd_file_buffer)
     asd_obj.xml_size = xml_size
-    
+
     xml_root = get_xml_root(asd_file_buffer, xml_size)
     
     # Parse Basic Info
@@ -221,14 +220,17 @@ def parse_xml_header(asd_obj: ASDfile, buffer):
         else:
             RuntimeWarning('Num of tg_no or qual_no and head_no are not equal')
         
-        asd_obj.heading.all_plausible = heading_root[1].attrib['allPlausible']
-        asd_obj.heading.quality = [x for x in heading_root[1].text.split(' ') if len(x) != 0]
-        
-        data_array = np.ones((int(head_no),2))
-        data_array[:,0] = [float(x) for x in heading_root[2].text.split(' ') if len(x) != 0]
-        data_array[:,1] = [asd_obj.aux_base_time + float(x) for x in heading_root[0].text.split(' ') if len(x) != 0]
-        
-        asd_obj.heading.heading = data_array
+        if int(qual_no) == 0:
+            asd_obj.heading.all_plausible = heading_root[1].attrib['allPlausible']
+        else:
+            asd_obj.heading.all_plausible = heading_root[1].attrib['allPlausible']
+            asd_obj.heading.quality = [x for x in heading_root[1].text.split(' ') if len(x) != 0]
+            
+            data_array = np.ones((int(head_no),2))
+            data_array[:,0] = [float(x) for x in heading_root[2].text.split(' ') if len(x) != 0]
+            data_array[:,1] = [asd_obj.aux_base_time + float(x) for x in heading_root[0].text.split(' ') if len(x) != 0]
+            
+            asd_obj.heading.heading = data_array
     
     parse_heading(asd_obj, xml_root[1][1])
     
@@ -251,16 +253,19 @@ def parse_xml_header(asd_obj: ASDfile, buffer):
         asd_obj.position.latency = float(pos_root.attrib['latency'])
         asd_obj.position.quality_tag = int(pos_root.attrib['quality'])
         
-        # parse data
-        asd_obj.position.all_plausible = pos_root[1].attrib['allPlausible']
-        asd_obj.position.quality = [x for x in pos_root[1].text.split(' ') if len(x) != 0]
-        
-        latlon_array = np.ones((int(tg_no),3))
-        latlon_array[:,0] = [float(x)*180/np.pi for x in pos_root[2].text.split(' ') if len(x) != 0]
-        latlon_array[:,1] = [float(x)*180/np.pi for x in pos_root[3].text.split(' ') if len(x) != 0]
-        latlon_array[:,2] = [asd_obj.aux_base_time + float(x) for x in pos_root[0].text.split(' ') if len(x) != 0]
-        
-        asd_obj.position.latlon = latlon_array
+        if int(qual_no) == 0:
+            asd_obj.position.all_plausible = pos_root[1].attrib['allPlausible']
+        else:
+            # parse data
+            asd_obj.position.all_plausible = pos_root[1].attrib['allPlausible']
+            asd_obj.position.quality = [x for x in pos_root[1].text.split(' ') if len(x) != 0]
+            
+            latlon_array = np.ones((int(tg_no),3))
+            latlon_array[:,0] = [float(x)*180/np.pi for x in pos_root[2].text.split(' ') if len(x) != 0]
+            latlon_array[:,1] = [float(x)*180/np.pi for x in pos_root[3].text.split(' ') if len(x) != 0]
+            latlon_array[:,2] = [asd_obj.aux_base_time + float(x) for x in pos_root[0].text.split(' ') if len(x) != 0]
+            
+            asd_obj.position.latlon = latlon_array
         
     parse_position(asd_obj, xml_root[1][2])
     
@@ -282,20 +287,23 @@ def parse_xml_header(asd_obj: ASDfile, buffer):
         asd_obj.speed_course.y = float(cogsog_root.attrib['yOffset'])
         asd_obj.speed_course.z = float(cogsog_root.attrib['zOffset'])
         
-        # parse data
-        asd_obj.speed_course.all_plausible = cogsog_root[1].attrib['allPlausible']
-        asd_obj.speed_course.quality = [x for x in cogsog_root[1].text.split(' ') if len(x) != 0]
-        
-        cog_array = np.ones((int(tg_no),2))
-        cog_array[:,0] = [float(x) for x in cogsog_root[2].text.split(' ') if len(x) != 0]
-        cog_array[:,1] = [asd_obj.aux_base_time + float(x) for x in cogsog_root[0].text.split(' ') if len(x) != 0]
-        
-        sog_array = np.ones((int(tg_no),2))
-        sog_array[:,0] = [float(x) for x in cogsog_root[3].text.split(' ') if len(x) != 0]
-        sog_array[:,1] = [asd_obj.aux_base_time + float(x) for x in cogsog_root[0].text.split(' ') if len(x) != 0]
-        
-        asd_obj.speed_course.cog = cog_array
-        asd_obj.speed_course.sog = sog_array
+        if int(qual_no) == 0:
+            asd_obj.speed_course.all_plausible = cogsog_root[1].attrib['allPlausible']
+        else:
+            # parse data
+            asd_obj.speed_course.all_plausible = cogsog_root[1].attrib['allPlausible']
+            asd_obj.speed_course.quality = [x for x in cogsog_root[1].text.split(' ') if len(x) != 0]
+            
+            cog_array = np.ones((int(tg_no),2))
+            cog_array[:,0] = [float(x) for x in cogsog_root[2].text.split(' ') if len(x) != 0]
+            cog_array[:,1] = [asd_obj.aux_base_time + float(x) for x in cogsog_root[0].text.split(' ') if len(x) != 0]
+            
+            sog_array = np.ones((int(tg_no),2))
+            sog_array[:,0] = [float(x) for x in cogsog_root[3].text.split(' ') if len(x) != 0]
+            sog_array[:,1] = [asd_obj.aux_base_time + float(x) for x in cogsog_root[0].text.split(' ') if len(x) != 0]
+            
+            asd_obj.speed_course.cog = cog_array
+            asd_obj.speed_course.sog = sog_array
         
     parse_speedcourse(asd_obj, xml_root[1][3])
     
