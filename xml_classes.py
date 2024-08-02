@@ -222,16 +222,16 @@ class Sounding:
     
 @dataclass    
 class PulseTarget:
-    time: float  # Posix time
-    index: int
-    pulse_correl: str
-    dist: float
-    type: str
-    ampl: float
-    ampldB: float
-    sn_ratio: float
-    classtg: str
-    direction: dict
+    time: float  # Posix time // The absolute time the target is related with. In [s] since 1 Jan 1970
+    index: int  
+    pulse_correl: str  # Is true, if target detection algorythmhas applied a pulse correlation
+    dist: float  # Distance to target expressed in sound traveltime (two way)
+    type: str  # Type of the target ['BOTTOM', 'NON-BOTTOM']
+    ampl: float  # Target echo amplitude in [V]
+    ampldB: float  # Same as 'ampl' but this amplitude is given in [dB] related to 2.5 V as 0 dB
+    sn_ratio: float  # Associated signal-to-noise ratio
+    classtg: str  # quality classifier of the target
+    direction: dict  # target direction
         
         
         
