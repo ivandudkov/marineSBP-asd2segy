@@ -57,7 +57,7 @@ class PositionData:
     
     def __init__(self) -> None:
         self.name = str()
-        
+        self.is_valid = False
         # Offsets, m
         self.z = float()
         self.x = float()

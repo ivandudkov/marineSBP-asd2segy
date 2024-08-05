@@ -255,11 +255,12 @@ def parse_xml_header(asd_obj: ASDfile, buffer):
         
         if int(qual_no) == 0:
             asd_obj.position.all_plausible = pos_root[1].attrib['allPlausible']
+            asd_obj.position.is_valid = False
         else:
             # parse data
+            asd_obj.position.is_valid = True
             asd_obj.position.all_plausible = pos_root[1].attrib['allPlausible']
             asd_obj.position.quality = [x for x in pos_root[1].text.split(' ') if len(x) != 0]
-            
             latlon_array = np.ones((int(tg_no),3))
             latlon_array[:,0] = [float(x)*180/np.pi for x in pos_root[2].text.split(' ') if len(x) != 0]
             latlon_array[:,1] = [float(x)*180/np.pi for x in pos_root[3].text.split(' ') if len(x) != 0]

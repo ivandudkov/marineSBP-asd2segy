@@ -12,85 +12,100 @@ from numpy import cos, sin
 class Trace:
     
     def __init__(self) -> None:
+        self.header = {'TRACE_SEQUENCE_LINE': 0, 
+                             'TRACE_SEQUENCE_FILE': 0, 
+                             'FieldRecord': 0, 
+                             'TraceNumber': 0, 
+                             'EnergySourcePoint': 0, 
+                             'CDP': 0, 
+                             'CDP_TRACE': 0, 
+                             'TraceIdentificationCode': 0, 
+                             'NSummedTraces': 0, 
+                             'NStackedTraces': 0, 
+                             'DataUse': 0,  # 1 - production, 2 - test
+                             'offset': 0, 
+                             'ReceiverGroupElevation': 0, 
+                             'SourceSurfaceElevation': 0, 
+                             'SourceDepth': 0, 
+                             'ReceiverDatumElevation': 0, 
+                             'SourceDatumElevation': 0, 
+                             'SourceWaterDepth': 0, 
+                             'GroupWaterDepth': 0, 
+                             'ElevationScalar': 0, 
+                             'SourceGroupScalar': 0, 
+                             'SourceX': 0, 
+                             'SourceY': 0, 
+                             'GroupX': 0,  # receiver
+                             'GroupY': 0,  # receiver
+                             'CoordinateUnits': 0,  # 1 - lenm/ft, 2 - secarc
+                             'WeatheringVelocity': 0, 
+                             'SubWeatheringVelocity': 0, 
+                             'SourceUpholeTime': 0, 
+                             'GroupUpholeTime': 0, 
+                             'SourceStaticCorrection': 0, 
+                             'GroupStaticCorrection': 0, 
+                             'TotalStaticApplied': 0, 
+                             'LagTimeA': 0, 
+                             'LagTimeB': 0, 
+                             'DelayRecordingTime': 0,  # in ms
+                             'MuteTimeStart': 0, 
+                             'MuteTimeEND': 0, 
+                             'TRACE_SAMPLE_COUNT': 0, 
+                             'TRACE_SAMPLE_INTERVAL': 0, 
+                             'GainType': 0, 
+                             'InstrumentGainConstant': 0, 
+                             'InstrumentInitialGain': 0, 
+                             'Correlated': 0,  # 1 - yes, 2 - no
+                             'SweepFrequencyStart': 0,  # sweep frequency at start
+                             'SweepFrequencyEnd': 0,  # sweep frequency at end
+                             'SweepLength': 0, 
+                             'SweepType': 0,  # 1 - lin, 2 - parabol, 3 - exp, 4 - other
+                             'SweepTraceTaperLengthStart': 0,  # in ms
+                             'SweepTraceTaperLengthEnd': 0,  # in ms
+                             'TaperType': 0,  # 1 - lin, 2 - cos, 3 - other
+                             'AliasFilterFrequency': 0, 
+                             'AliasFilterSlope': 0, 
+                             'NotchFilterFrequency': 0, 
+                             'NotchFilterSlope': 0, 
+                             'LowCutFrequency': 0, 
+                             'HighCutFrequency': 0, 
+                             'LowCutSlope': 0, 
+                             'HighCutSlope': 0, 
+                             'YearDataRecorded': 0, 
+                             'DayOfYear': 0, 
+                             'HourOfDay': 0, 
+                             'MinuteOfHour': 0, 
+                             'SecondOfMinute': 0, 
+                             'TimeBaseCode': 0,  # 1 - local, 2 - GMT, 3 - other
+                             'TraceWeightingFactor': 0, 
+                             'GeophoneGroupNumberRoll1': 0, 
+                             'GeophoneGroupNumberFirstTraceOrigField': 0, 
+                             'GeophoneGroupNumberLastTraceOrigField': 0, 
+                             'GapSize': 0, 
+                             'OverTravel': 0, 
+                             'CDP_X': 0, 
+                             'CDP_Y': 0, 
+                             'INLINE_3D': 0, 
+                             'CROSSLINE_3D': 0, 
+                             'ShotPoint': 0, 
+                             'ShotPointScalar': 0, 
+                             'TraceValueMeasurementUnit': 0, 
+                             'TransductionConstantMantissa': 0, 
+                             'TransductionConstantPower': 0, 
+                             'TransductionUnit': 0, 
+                             'TraceIdentifier': 0, 
+                             'ScalarTraceHeader': 0, 
+                             'SourceType': 0, 
+                             'SourceEnergyDirectionMantissa': 0, 
+                             'SourceEnergyDirectionExponent': 0, 
+                             'SourceMeasurementMantissa': 0, 
+                             'SourceMeasurementExponent': 0, 
+                             'SourceMeasurementUnit': 0}
         
-        # Bytes 1 - 20
-        self.trace_index = 0
-        self.trace_seq_num_line = 0
-        self.trace_seq_num_reel = 0
-        self.ffid = 0
-        self.trace_num_field_record = 0
-        self.sp = 0
+        self.data = []
+        self.dt = 0  # in ms
+        self.file = ''
         
-        # Bytes 21 - >>
-        self.trace_num = 0
-        self.trace_id = 0
-        self.num_of_vert_sum_traces = 0
-        self.num_of_horiz_sum_traces = 0
-        self.data_use = 0  # 1 - production, 2 - test
-        
-        # Bytes 37 - 70
-        self.dist_from_source_to_receiv = 0
-        self.receiv_group_elev = 0
-        self.surface_elev_at_source = 0
-        self.source_depth_below_sufr = 0
-        self.datum_elev_at_receiv_grp = 0
-        self.datum_elev_at_source = 0
-        self.water_depth_at_source = 0
-        self.water_depth_at_group = 0
-        self.scaler_to_all_elev_and_depth = 0
-        
-        # Coordinates, bytes 71 - 90
-        self.scaler_to_all_coordinates = 0
-        self.source_x_coord = 0
-        self.source_y_coord = 0
-        self.group_x_coord = 0  # receiver
-        self.group_y_coord = 0  # receiver
-        self.coordinate_units = 0  # 1 - lenm/ft, 2 - secarc
-        
-        # bytes 91 - 108 - NOTHING
-        
-        # bytes 109-110
-        self.delay_rec_time = 0  # in ms
-        
-        # bytes 115-118
-        self.num_of_samples = 0
-        self.sample_interval = 0
-        
-        # bytes 119 - 124
-        self.gain_type_of_instruments = 0
-        self.instrument_gain = 0
-        self.instrument_gain_constant = 0
-        
-        
-        # bytes 125 - 140
-        self.correlated = 0  # 1 - yes, 2 - no
-        self.sweep_freq_start = 0  # sweep frequency at start
-        self.sweep_freq_end = 0  # sweep frequency at end
-        self.sweep_length_in_ms = 0
-        self.sweep_type = 0  # 1 - lin, 2 - parabol, 3 - exp, 4 - other
-        self.sweep_trace_taper_len_at_start = 0  # in ms
-        self.sweep_trace_taper_len_at_end = 0  # in ms
-        self.taper_type = 0  # 1 - lin, 2 - cos, 3 - other
-        
-        # bytes 141-156 - NOTHING
-        
-        # bytes 157 - 170
-        self.year = 0
-        self.day = 0
-        self.hour = 0
-        self.minute = 0
-        self.second = 0
-        self.time_basis = 0  # 1 - local, 2 - GMT, 3 - other
-        
-        # OUT OF THE HEADER
-        self.millisecond = 0
-        
-        self.trace_data = []
-        
-        
-    
-    
-    
 
 def plot_signal2(x_old, y_old, x_new, y_new):
     # plt.plot(x_old, y_old, 'o', x_new, y_new, '-')
@@ -274,7 +289,7 @@ def display_periodogram(trace, sample_freq):
 
 # Нужно указать sample start time и trace len
 # функция proc_trace должна выдать массивы и заголовки, готовые для записи seg-y в segyio
-def proc_trace(sounding: Sounding, asd_obj: ASDfile, delay=0, tracelen=200):  # delay and tracelen in ms
+def proc_trace(sounding: Sounding, asd_obj: ASDfile, trace: Trace, delay=0, tracelen=200):  # delay and tracelen in ms
     
     ampl_time_rel2trg = sounding.ampl_time_rel2trg  # in secs
     ampl_scan_interval = sounding.ampl_scan_interval  # in secs
@@ -294,10 +309,22 @@ def proc_trace(sounding: Sounding, asd_obj: ASDfile, delay=0, tracelen=200):  # 
     complex = complex_trace(sounding.data_array[:,0], sounding.data_array[:,1])
     envelope_data = np.abs(complex)
     
-    real_spectre = fft(complex.real) + fft(complex.imag)
-    reverse_fft = ifft(real_spectre)
+    print('latlon array:')
+    print(asd_obj.position.latlon)
+    if asd_obj.position.is_valid:
+        lat = asd_obj.position.latlon[0,0]
+        lon = asd_obj.position.latlon[0,1]
+        time = asd_obj.position.latlon[0,2]
+        
+        
+    else:
+        lat = 0
+        lon = 0
     
-    envelope_data = reverse_fft
+    # real_spectre = fft(complex.real) + fft(complex.imag)
+    # reverse_fft = ifft(real_spectre)
+    
+    # envelope_data = reverse_fft
 
     # Real part of the complex trace is an acoustic amplitude
     # sounding.data_array[:,0] - real part of the complex trace, amplitude vallues
@@ -319,6 +346,10 @@ def proc_trace(sounding: Sounding, asd_obj: ASDfile, delay=0, tracelen=200):  # 
     # Data at desired Sample Times and replace numpy 'nan' values by 0
     envelope_data_at_desired = np.nan_to_num(func(desired_sample_times))
     
-    return envelope_data_at_desired, desired_sample_times, ampl_scan_interval
+    
+    trace.data = envelope_data_at_desired
+    trace.dt = ampl_scan_interval
+    
+    return envelope_data_at_desired, desired_sample_times
 
 
