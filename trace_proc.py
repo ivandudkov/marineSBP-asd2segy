@@ -1,5 +1,6 @@
 import numpy as np
 from scipy import signal, interpolate
+from scipy.fft import fft, ifft
 import matplotlib.pyplot as plt
 
 from asd import ASDfile
@@ -208,22 +209,14 @@ def euler_angle_rot_matrix(roll, pitch, yaw):
     return rot_matrix
 
 
-# Нужно указать sample start time и trace len
-# функция proc_trace должна выдать массивы и заголовки, готовые для записи seg-y в segyio
-def proc_trace(sounding: Sounding, asd_obj: ASDfile, delay=0, tracelen=0.2):  # delay and tracelen in s
+def attitude_integrate(sounding: Sounding, asd_obj: ASDfile):
     
     ampl_time_rel2trg = sounding.ampl_time_rel2trg  # in secs
     ampl_scan_interval = sounding.ampl_scan_interval  # in secs
     trg_time = sounding.trg_time  # posix seconds, absolute time
-
-    # reference_intensity = 6.67*10**-19  # W/m^2, in Sea Water muPa at 1m
-    # source_intensity = 10**((sounding.src_level + 10*np.log10(reference_intensity))/10)
-    # print(f'Source Intensity (approximate): {source_intensity}')
-    
-    adc_scale_factor = asd_obj.general.adc_scale_factor
-     
-    # Heave part
     sv_keel = asd_obj.general.sv_keel  # m/s
+    
+    # Heave part
     heave = asd_obj.motion.heave  # [[m],[posix seconds]]
     heave_quality = asd_obj.motion.quality[:-1] 
     heave_func = interpolate.interp1d(heave[:,1], heave[:,0], fill_value=0)
@@ -249,36 +242,77 @@ def proc_trace(sounding: Sounding, asd_obj: ASDfile, delay=0, tracelen=0.2):  # 
     
     # print(asd_obj.installation.__dict__)
     p70_lever_arm = np.array([asd_obj.installation.tx_x, asd_obj.installation.tx_y, asd_obj.installation.tx_z]).reshape((3, 1))
-    
-    
-    rotated_la = rotation_matrix @ p70_lever_arm
-    # print(rotated_la)
-    tx_z_rot = rotated_la[0,2][0]
+    rotated_lever_arm = rotation_matrix @ p70_lever_arm
+
+    tx_z_rot = rotated_lever_arm[0,2][0]
     rot_diff = asd_obj.installation.tx_z - tx_z_rot
-    # print(tx_z_rot[0])
-    # print(rot_diff)
-    # print(heave_at_ampl_time)
 
     heave_correction_secs = (heave_at_ampl_time*2)/sv_keel
     wl_corr = tx_z_rot/sv_keel*2
+    
+    return heave_correction_secs
 
+
+def display_periodogram(trace, sample_freq):
+    signal_f, signal_psd = signal.periodogram(trace, sample_freq)
+    
+    plt.figure(figsize=(14, 10))
+    plt.subplot(2, 1, 2)
+    plt.plot(signal_f, 20*np.log10(abs(signal_psd)))
+    plt.ylim([-100, 100])
+    plt.xlim([0, 16000])
+    plt.xlabel('Frequency (Hz)')
+    plt.ylabel('PSD (Power/Hz, dB)')
+    plt.grid()
+    plt.legend(('Original Signal'))
+
+    # if 'save' in kwargs:
+    #     aux.save_figure(kwargs['save'])
+
+    plt.show()
+    
+
+# Нужно указать sample start time и trace len
+# функция proc_trace должна выдать массивы и заголовки, готовые для записи seg-y в segyio
+def proc_trace(sounding: Sounding, asd_obj: ASDfile, delay=0, tracelen=200):  # delay and tracelen in ms
+    
+    ampl_time_rel2trg = sounding.ampl_time_rel2trg  # in secs
+    ampl_scan_interval = sounding.ampl_scan_interval  # in secs
+    trg_time = sounding.trg_time  # posix seconds, absolute time
+    delay = delay/1000
+    tracelen = tracelen/1000
+    
+    heave_correction_secs = attitude_integrate(sounding=sounding, asd_obj=asd_obj)
     ampl_time_rel2trg_corr = ampl_time_rel2trg - heave_correction_secs
+    
+    # reference_intensity = 6.67*10**-19  # W/m^2, in Sea Water muPa at 1m
+    # source_intensity = 10**((sounding.src_level + 10*np.log10(reference_intensity))/10)
+    # print(f'Source Intensity (approximate): {source_intensity}')
+    
+    adc_scale_factor = asd_obj.general.adc_scale_factor
     
     complex = complex_trace(sounding.data_array[:,0], sounding.data_array[:,1])
     envelope_data = np.abs(complex)
     
+    real_spectre = fft(complex.real) + fft(complex.imag)
+    reverse_fft = ifft(real_spectre)
+    
+    envelope_data = reverse_fft
+
     # Real part of the complex trace is an acoustic amplitude
     # sounding.data_array[:,0] - real part of the complex trace, amplitude vallues
     # sounding.data_array[:,1] - imag part of the complex trace
     # complex = complex_trace(sounding.data_array[:,0], sounding.data_array[:,1])
+    # freq = 1/ampl_scan_interval
+    # display_periodogram(complex, freq)
     
     # Original Sample Times
     sample_times = [ampl_time_rel2trg_corr + x*ampl_scan_interval for x in np.arange(envelope_data.shape[0])]
-    
+
     # print(sample_times)
     # Desired Sample Times
     desired_sample_times = np.arange(delay,delay+tracelen+ampl_scan_interval,ampl_scan_interval)
-    
+
     # Resample data again using desired Sample Times
     func = interpolate.CubicSpline(sample_times, envelope_data, extrapolate=False)
     
