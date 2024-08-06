@@ -2,6 +2,11 @@ import numpy as np
 from scipy import signal, interpolate
 from scipy.fft import fft, ifft
 import matplotlib.pyplot as plt
+import os
+from datetime import datetime, timezone
+
+
+import asd
 
 from asd import ASDfile
 from xml_classes import Sounding
@@ -104,21 +109,10 @@ class Trace:
         
         self.data = []
         self.dt = 0  # in ms
-        self.file = ''
+        self.acf = ''
+        self.asd = ''
         
-
-def plot_signal2(x_old, y_old, x_new, y_new):
-    # plt.plot(x_old, y_old, 'o', x_new, y_new, '-')
-    plt.plot(x_old, y_old, '_')
-    plt.plot(x_new, y_new, '|')
-    plt.show()
-    
-def plot_signal(x_old, y_old, x_new, y_new):
-    # plt.plot(x_old, y_old, 'o', x_new, y_new, '-')
-    plt.plot(x_old, y_old)
-    plt.plot(x_new, y_new)
-    plt.show()
-
+        
 def resample_trace(ampls, dt, new_dt):
     num = round(dt*np.shape(ampls)[0]/new_dt)
     ampls_resampled = signal.resample(x=ampls, num=num)
@@ -138,14 +132,6 @@ def mag_phase(complex_trace):
     phase_trace = np.angle(complex_trace, deg=True)
     
     return magnitude_trace, phase_trace
-
-def filter_heave(heave, heave_quality):
-    for i, qual in enumerate(heave_quality):
-        if qual == 'p':
-            pass
-        else:
-            pass
-            heave.pop(i)
 
 def shift_data_to_zero_start(sample_array, data_array):
     # As it turned out, the sample start time given
@@ -193,11 +179,32 @@ def abs_trace(complex_trace):
     return abs_value, rel_angles
 
 
-def heave_correction(asd_obj: ASDfile):
-    draught = asd_obj.general.draught
-    print(draught)
-    print(asd_obj.general.is_draught_corrected)
+def heave_correction(sounding: Sounding, asd_obj: ASDfile, filter=False):
+    ampl_time_rel2trg = sounding.ampl_time_rel2trg  # in secs
+    trg_time = sounding.trg_time  # posix seconds, absolute time
+    sv_keel = asd_obj.general.sv_keel  # m/s
+    
 
+    heave = asd_obj.motion.heave  # [[m],[posix seconds]]
+    heave_quality = asd_obj.motion.quality[:-1] 
+    
+    # Filter heave: in progress
+    def filter_heave(heave, heave_quality):
+        for i, qual in enumerate(heave_quality):
+            if qual == 'p':
+                pass
+            else:
+                pass
+                heave.pop(i)
+        
+        # Filter heave: in progress
+
+    heave_func = interpolate.CubicSpline(heave[:,1], heave[:,0], extrapolate=True)
+    heave_at_ampl_time = heave_func(trg_time + ampl_time_rel2trg)
+    heave_correction_secs = heave_at_ampl_time*2/sv_keel
+    
+    return heave_correction_secs
+    
 
 def euler_angle_rot_matrix(roll, pitch, yaw):
     # Euler Angle Rotation Matrices at event
@@ -241,17 +248,17 @@ def attitude_integrate(sounding: Sounding, asd_obj: ASDfile):
     # Roll
     roll = asd_obj.motion.roll
     roll_func = interpolate.interp1d(roll[:,1], roll[:,0], fill_value=0)
-    roll_at_ampl_time = heave_func(trg_time + ampl_time_rel2trg)
+    roll_at_ampl_time = roll_func(trg_time + ampl_time_rel2trg)
     
     # Pitch
     pitch = asd_obj.motion.pitch
     pitch_func = interpolate.interp1d(pitch[:,1], pitch[:,0], fill_value=0)
-    pitch_at_ampl_time = heave_func(trg_time + ampl_time_rel2trg)
+    pitch_at_ampl_time = pitch_func(trg_time + ampl_time_rel2trg)
     
     # Yaw
     yaw = asd_obj.heading.heading
     yaw_func = interpolate.interp1d(yaw[:,1], yaw[:,0], fill_value=0)
-    yaw_at_ampl_time = heave_func(trg_time + ampl_time_rel2trg)
+    yaw_at_ampl_time = yaw_func(trg_time + ampl_time_rel2trg)
     
     rotation_matrix = euler_angle_rot_matrix(roll_at_ampl_time, pitch_at_ampl_time, yaw_at_ampl_time)
     
@@ -261,82 +268,89 @@ def attitude_integrate(sounding: Sounding, asd_obj: ASDfile):
 
     tx_z_rot = rotated_lever_arm[0,2][0]
     rot_diff = asd_obj.installation.tx_z - tx_z_rot
+    print(p70_lever_arm)
+    print(rotated_lever_arm)
 
     heave_correction_secs = (heave_at_ampl_time*2)/sv_keel
     wl_corr = tx_z_rot/sv_keel*2
     
     return heave_correction_secs
 
+def get_pos_acf(idx_path):
+    """ A function used for operative track creation of the
+    raw Parasound P70 data
 
-def display_periodogram(trace, sample_freq):
-    signal_f, signal_psd = signal.periodogram(trace, sample_freq)
+    Parameters
+    ----------
+    idx_path : str
+        path to idx file of Parasound P70 raw data
+
+    Returns
+    -------
+    list
+        A list of strings with format:
+        num,acf,asd,ISOdatetime,POSIXsec,lat,lon
+    """
+
+    asd_obj_list = ASDfile.create_from_idx_file(idx_path)
     
-    plt.figure(figsize=(14, 10))
-    plt.subplot(2, 1, 2)
-    plt.plot(signal_f, 20*np.log10(abs(signal_psd)))
-    plt.ylim([-100, 100])
-    plt.xlim([0, 16000])
-    plt.xlabel('Frequency (Hz)')
-    plt.ylabel('PSD (Power/Hz, dB)')
-    plt.grid()
-    plt.legend(('Original Signal'))
+    acf_path = idx_path[:-4]
+    acf_name = os.path.basename(acf_path)
+    
+    pos_strings = []
+    
+    with open(acf_path, 'rb') as f1:
+        buffer = f1.read()
+    
+    num = 1
+    
+    asd_obj: ASDfile    
+    for asd_obj in asd_obj_list:
+        asd.parse_xml_header(asd_obj, buffer)
 
-    # if 'save' in kwargs:
-    #     aux.save_figure(kwargs['save'])
+        base_time = asd_obj.aux_base_time  # POSIX seconds
+        
+        if asd_obj.position.is_valid:
+            lat_lon_array = asd_obj.position.latlon
+            
+            for _, lat_lon in enumerate(lat_lon_array):
+                
+                datetime_obj = datetime.fromtimestamp(lat_lon[2], tz=timezone.utc)
 
-    plt.show()
+                pos_string = f'{num},{acf_name},{asd_obj.name},{datetime_obj.isoformat()},{lat_lon[2]},{lat_lon[0]},{lat_lon[1]}'
+                pos_strings.append(pos_string)
+                num += 1
+                
+        else:
+            datetime_obj = datetime.fromtimestamp(base_time, tz=timezone.utc)
+            pos_string = f'{num},{acf_name},{asd_obj.name},{datetime_obj.isoformat()},{base_time},0.0,0.0'
+            pos_strings.append(pos_string)
+            num += 1
+    
+    return pos_strings
+    
     
 
-# Нужно указать sample start time и trace len
 # функция proc_trace должна выдать массивы и заголовки, готовые для записи seg-y в segyio
-def proc_trace(sounding: Sounding, asd_obj: ASDfile, trace: Trace, delay=0, tracelen=200):  # delay and tracelen in ms
+def proc_trace(sounding: Sounding, asd_obj: ASDfile, delay=0, tracelen=200):  # delay and tracelen in ms
     
     ampl_time_rel2trg = sounding.ampl_time_rel2trg  # in secs
     ampl_scan_interval = sounding.ampl_scan_interval  # in secs
-    trg_time = sounding.trg_time  # posix seconds, absolute time
-    delay = delay/1000
-    tracelen = tracelen/1000
+    delay = delay/1000  # in secs
+    tracelen = tracelen/1000  # in secs
     
-    heave_correction_secs = attitude_integrate(sounding=sounding, asd_obj=asd_obj)
+    heave_correction_secs = heave_correction(sounding=sounding, asd_obj=asd_obj)
     ampl_time_rel2trg_corr = ampl_time_rel2trg - heave_correction_secs
-    
-    # reference_intensity = 6.67*10**-19  # W/m^2, in Sea Water muPa at 1m
-    # source_intensity = 10**((sounding.src_level + 10*np.log10(reference_intensity))/10)
-    # print(f'Source Intensity (approximate): {source_intensity}')
-    
-    adc_scale_factor = asd_obj.general.adc_scale_factor
-    
-    complex = complex_trace(sounding.data_array[:,0], sounding.data_array[:,1])
-    envelope_data = np.abs(complex)
-    
-    print('latlon array:')
-    print(asd_obj.position.latlon)
-    if asd_obj.position.is_valid:
-        lat = asd_obj.position.latlon[0,0]
-        lon = asd_obj.position.latlon[0,1]
-        time = asd_obj.position.latlon[0,2]
-        
-        
-    else:
-        lat = 0
-        lon = 0
-    
-    # real_spectre = fft(complex.real) + fft(complex.imag)
-    # reverse_fft = ifft(real_spectre)
-    
-    # envelope_data = reverse_fft
-
+    hc = attitude_integrate(sounding=sounding, asd_obj=asd_obj)
     # Real part of the complex trace is an acoustic amplitude
     # sounding.data_array[:,0] - real part of the complex trace, amplitude vallues
     # sounding.data_array[:,1] - imag part of the complex trace
-    # complex = complex_trace(sounding.data_array[:,0], sounding.data_array[:,1])
-    # freq = 1/ampl_scan_interval
-    # display_periodogram(complex, freq)
+    complex = complex_trace(sounding.data_array[:,0], sounding.data_array[:,1])
+    envelope_data = np.abs(complex)
     
     # Original Sample Times
     sample_times = [ampl_time_rel2trg_corr + x*ampl_scan_interval for x in np.arange(envelope_data.shape[0])]
-
-    # print(sample_times)
+    
     # Desired Sample Times
     desired_sample_times = np.arange(delay,delay+tracelen+ampl_scan_interval,ampl_scan_interval)
 
@@ -346,10 +360,44 @@ def proc_trace(sounding: Sounding, asd_obj: ASDfile, trace: Trace, delay=0, trac
     # Data at desired Sample Times and replace numpy 'nan' values by 0
     envelope_data_at_desired = np.nan_to_num(func(desired_sample_times))
     
-    
-    trace.data = envelope_data_at_desired
-    trace.dt = ampl_scan_interval
-    
-    return envelope_data_at_desired, desired_sample_times
+    return envelope_data_at_desired
 
 
+def get_traces(idx_path):
+    asd_obj_list = ASDfile.create_from_idx_file(idx_path)
+    
+    acf_path = idx_path[:-4]
+    acf_name = os.path.basename(acf_path)
+    
+    traces = []
+    
+    # Load acf file into the memory
+    with open(acf_path, 'rb') as f1:
+        buffer = f1.read()
+    
+
+    delay = 50  # ms
+    trace_len = 250  # ms
+
+    num_of_traces = 0
+    dt = 0.082
+    
+    
+    for obj in asd_obj_list[0:5]:
+        if num_of_traces > 1800:
+            break
+        else:
+            asd.parse_xml_header(obj, buffer)
+            asd.parse_bin_header(obj, buffer)
+            
+            
+            for sounding in obj.soundings[:]:
+                trace = Trace()
+                
+                ampls, _ = proc_trace(sounding, obj, trace, tracelen=trace_len, delay=delay)
+                
+                trace.dt = sounding.ampl_scan_interval*1000  # in ms
+                trace.data = ampls
+                
+                
+                traces.append(trace)
