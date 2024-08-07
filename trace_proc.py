@@ -227,7 +227,7 @@ def euler_angle_rot_matrix(roll, pitch, yaw):
     
     ## Compound Rotation Matrix
     rot_matrix.append(Rz_tx @ Ry_tx @ Rx_tx) ###!!! Our rotation order is: 𝑅 = 𝑅(𝑌) ⋅ 𝑅(𝑃) ⋅ 𝑅(𝑅) !!!###
-
+    
     return rot_matrix
 
 
@@ -260,19 +260,16 @@ def attitude_integrate(sounding: Sounding, asd_obj: ASDfile):
     yaw_func = interpolate.interp1d(yaw[:,1], yaw[:,0], fill_value=0)
     yaw_at_ampl_time = yaw_func(trg_time + ampl_time_rel2trg)
     
-    rotation_matrix = euler_angle_rot_matrix(roll_at_ampl_time, pitch_at_ampl_time, yaw_at_ampl_time)
+    rot_matrix = euler_angle_rot_matrix(roll_at_ampl_time, pitch_at_ampl_time, yaw_at_ampl_time)
     
     # print(asd_obj.installation.__dict__)
     p70_lever_arm = np.array([asd_obj.installation.tx_x, asd_obj.installation.tx_y, asd_obj.installation.tx_z]).reshape((3, 1))
-    rotated_lever_arm = rotation_matrix @ p70_lever_arm
+    rotated_lever_arm = rot_matrix @ p70_lever_arm
 
     tx_z_rot = rotated_lever_arm[0,2][0]
     rot_diff = asd_obj.installation.tx_z - tx_z_rot
-    print(p70_lever_arm)
-    print(rotated_lever_arm)
-
-    heave_correction_secs = (heave_at_ampl_time*2)/sv_keel
-    wl_corr = tx_z_rot/sv_keel*2
+    
+    heave_correction_secs = (heave_at_ampl_time + rot_diff)/sv_keel*2
     
     return heave_correction_secs
 
@@ -339,9 +336,10 @@ def proc_trace(sounding: Sounding, asd_obj: ASDfile, delay=0, tracelen=200):  # 
     delay = delay/1000  # in secs
     tracelen = tracelen/1000  # in secs
     
-    heave_correction_secs = heave_correction(sounding=sounding, asd_obj=asd_obj)
+    # heave_correction_secs = heave_correction(sounding=sounding, asd_obj=asd_obj)
+    heave_correction_secs = attitude_integrate(sounding=sounding, asd_obj=asd_obj)
     ampl_time_rel2trg_corr = ampl_time_rel2trg - heave_correction_secs
-    hc = attitude_integrate(sounding=sounding, asd_obj=asd_obj)
+
     # Real part of the complex trace is an acoustic amplitude
     # sounding.data_array[:,0] - real part of the complex trace, amplitude vallues
     # sounding.data_array[:,1] - imag part of the complex trace
