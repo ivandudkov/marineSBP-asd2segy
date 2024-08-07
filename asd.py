@@ -196,7 +196,7 @@ def parse_xml_header(asd_obj: ASDfile, buffer):
         
         shape = (no_scans,2)
         data_array = np.ones(shape)
-        data_array[:,0] = [float(x) for x in root.text.split(' ') if len(x) != 0]
+        data_array[:,0] = [float(x) for x in root.text.split(' ') if len(x) != 0]  # rad
         data_array[:,1] = [start_time + interval*x for x in np.arange(0,no_scans,1)]
         
         return data_array
@@ -227,7 +227,7 @@ def parse_xml_header(asd_obj: ASDfile, buffer):
             asd_obj.heading.quality = [x for x in heading_root[1].text.split(' ') if len(x) != 0]
             
             data_array = np.ones((int(head_no),2))
-            data_array[:,0] = [float(x) for x in heading_root[2].text.split(' ') if len(x) != 0]
+            data_array[:,0] = [float(x) for x in heading_root[2].text.split(' ') if len(x) != 0]  # rad
             data_array[:,1] = [asd_obj.aux_base_time + float(x) for x in heading_root[0].text.split(' ') if len(x) != 0]
             
             asd_obj.heading.heading = data_array
@@ -296,11 +296,11 @@ def parse_xml_header(asd_obj: ASDfile, buffer):
             asd_obj.speed_course.quality = [x for x in cogsog_root[1].text.split(' ') if len(x) != 0]
             
             cog_array = np.ones((int(tg_no),2))
-            cog_array[:,0] = [float(x) for x in cogsog_root[2].text.split(' ') if len(x) != 0]
+            cog_array[:,0] = [float(x) for x in cogsog_root[2].text.split(' ') if len(x) != 0]  # rad
             cog_array[:,1] = [asd_obj.aux_base_time + float(x) for x in cogsog_root[0].text.split(' ') if len(x) != 0]
             
             sog_array = np.ones((int(tg_no),2))
-            sog_array[:,0] = [float(x) for x in cogsog_root[3].text.split(' ') if len(x) != 0]
+            sog_array[:,0] = [float(x) for x in cogsog_root[3].text.split(' ') if len(x) != 0]  # m/s
             sog_array[:,1] = [asd_obj.aux_base_time + float(x) for x in cogsog_root[0].text.split(' ') if len(x) != 0]
             
             asd_obj.speed_course.cog = cog_array

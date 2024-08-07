@@ -83,8 +83,8 @@ class SpeedCourseData:
         self.all_plausible = bool()
         self.quality = list()
         
-        self.cog = np.empty((2,1))  # course over ground, deg?
-        self.sog = np.empty((2,1))  # speed over ground, knots
+        self.cog = np.empty((2,1))  # course over ground, rad
+        self.sog = np.empty((2,1))  # speed over ground, m/s
         
 class DepthData:
     def __init__(self) -> None:

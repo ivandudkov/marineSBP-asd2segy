@@ -7,11 +7,91 @@ from datetime import datetime, timezone
 
 
 import asd
-
 from asd import ASDfile
 from xml_classes import Sounding
 
 from numpy import cos, sin
+from pyproj import Proj, CRS, Transformer
+
+
+int_header = {'TRACE_SEQUENCE_LINE': 1, 
+                             'TRACE_SEQUENCE_FILE': 5, 
+                             'FieldRecord': 9, 
+                             'TraceNumber': 13, 
+                             'EnergySourcePoint': 17, 
+                             'CDP': 21, 
+                             'CDP_TRACE': 25, 
+                             'TraceIdentificationCode': 29, 
+                             'NSummedTraces': 31, 
+                             'NStackedTraces': 33, 
+                             'DataUse': 35,  # 1 - production, 2 - test
+                             'offset': 37, 
+                             'ReceiverGroupElevation': 41, 
+                             'SourceSurfaceElevation': 45, 
+                             'SourceDepth': 49, 
+                             'ReceiverDatumElevation': 53, 
+                             'SourceDatumElevation': 57, 
+                             'SourceWaterDepth': 61, 
+                             'GroupWaterDepth': 65, 
+                             'ElevationScalar': 69, 
+                             'SourceGroupScalar': 71, 
+                             'SourceX': 73, 
+                             'SourceY': 77, 
+                             'GroupX': 81,  # receiver
+                             'GroupY': 85,  # receiver
+                             'CoordinateUnits': 89,  # 1 - lenm/ft, 2 - secarc
+                             'WeatheringVelocity': 91, 
+                             'SubWeatheringVelocity': 93, 
+                             'SourceUpholeTime': 95, 
+                             'GroupUpholeTime': 97, 
+                             'SourceStaticCorrection': 99, 
+                             'GroupStaticCorrection': 101, 
+                             'TotalStaticApplied': 103, 
+                             'LagTimeA': 105, 
+                             'LagTimeB': 107, 
+                             'DelayRecordingTime': 109,  # in ms
+                             'MuteTimeStart': 111, 
+                             'MuteTimeEND': 113, 
+                             'TRACE_SAMPLE_COUNT': 115, 
+                             'TRACE_SAMPLE_INTERVAL': 117, 
+                             'GainType': 119, 
+                             'InstrumentGainConstant': 121, 
+                             'InstrumentInitialGain': 123, 
+                             'Correlated': 125,  # 1 - yes, 2 - no
+                             'SweepFrequencyStart': 127,  # sweep frequency at start
+                             'SweepFrequencyEnd': 129,  # sweep frequency at end
+                             'SweepLength': 131,  # in ms 
+                             'SweepType': 133,  # 1 - lin, 2 - parabol, 3 - exp, 4 - other
+                             'SweepTraceTaperLengthStart': 135,  # in ms
+                             'SweepTraceTaperLengthEnd': 137,  # in ms
+                             'TaperType': 139,  # 1 - lin, 2 - cos, 3 - other
+                             'AliasFilterFrequency': 141, 
+                             'AliasFilterSlope': 143, 
+                             'NotchFilterFrequency': 149, 
+                             'NotchFilterSlope': 151, 
+                             'LowCutFrequency': 153, 
+                             'HighCutFrequency': 155, 
+                             'LowCutSlope': 153, 
+                             'HighCutSlope': 155, 
+                             'YearDataRecorded': 157, 
+                             'DayOfYear': 159, 
+                             'HourOfDay': 161, 
+                             'MinuteOfHour': 163, 
+                             'SecondOfMinute': 165, 
+                             'TimeBaseCode': 167,  # 1 - local, 2 - GMT, 3 - other, 4 - UTC
+                             'TraceWeightingFactor': 169, 
+                             'GeophoneGroupNumberRoll1': 171, 
+                             'GeophoneGroupNumberFirstTraceOrigField': 173, 
+                             'GeophoneGroupNumberLastTraceOrigField': 175, 
+                             'GapSize': 177, 
+                             'OverTravel': 179, 
+                             'CDP_X': 181, 
+                             'CDP_Y': 185, 
+                             'INLINE_3D': 189, 
+                             'CROSSLINE_3D': 193, 
+                             'ShotPoint': 197, 
+                             'ShotPointScalar': 201, 
+                             'TraceValueMeasurementUnit': 203}
 
 
 class Trace:
@@ -81,7 +161,7 @@ class Trace:
                              'HourOfDay': 0, 
                              'MinuteOfHour': 0, 
                              'SecondOfMinute': 0, 
-                             'TimeBaseCode': 0,  # 1 - local, 2 - GMT, 3 - other
+                             'TimeBaseCode': 0,  # 1 - local, 2 - GMT, 3 - other, 4 - UTC
                              'TraceWeightingFactor': 0, 
                              'GeophoneGroupNumberRoll1': 0, 
                              'GeophoneGroupNumberFirstTraceOrigField': 0, 
@@ -94,21 +174,11 @@ class Trace:
                              'CROSSLINE_3D': 0, 
                              'ShotPoint': 0, 
                              'ShotPointScalar': 0, 
-                             'TraceValueMeasurementUnit': 0, 
-                             'TransductionConstantMantissa': 0, 
-                             'TransductionConstantPower': 0, 
-                             'TransductionUnit': 0, 
-                             'TraceIdentifier': 0, 
-                             'ScalarTraceHeader': 0, 
-                             'SourceType': 0, 
-                             'SourceEnergyDirectionMantissa': 0, 
-                             'SourceEnergyDirectionExponent': 0, 
-                             'SourceMeasurementMantissa': 0, 
-                             'SourceMeasurementExponent': 0, 
-                             'SourceMeasurementUnit': 0}
+                             'TraceValueMeasurementUnit': 0}
         
         self.data = []
         self.dt = 0  # in ms
+        self.time = 0  # POSIX time tag
         self.acf = ''
         self.asd = ''
         
@@ -234,7 +304,6 @@ def euler_angle_rot_matrix(roll, pitch, yaw):
 def attitude_integrate(sounding: Sounding, asd_obj: ASDfile):
     
     ampl_time_rel2trg = sounding.ampl_time_rel2trg  # in secs
-    ampl_scan_interval = sounding.ampl_scan_interval  # in secs
     trg_time = sounding.trg_time  # posix seconds, absolute time
     sv_keel = asd_obj.general.sv_keel  # m/s
     
@@ -271,7 +340,7 @@ def attitude_integrate(sounding: Sounding, asd_obj: ASDfile):
     
     heave_correction_secs = (heave_at_ampl_time + rot_diff)/sv_keel*2
     
-    return heave_correction_secs
+    return heave_correction_secs, rotated_lever_arm
 
 def get_pos_acf(idx_path):
     """ A function used for operative track creation of the
@@ -329,22 +398,28 @@ def get_pos_acf(idx_path):
     
 
 # функция proc_trace должна выдать массивы и заголовки, готовые для записи seg-y в segyio
-def proc_trace(sounding: Sounding, asd_obj: ASDfile, delay=0, tracelen=200):  # delay and tracelen in ms
+def proc_trace(trace_num, espg_num, sounding: Sounding, asd_obj: ASDfile, delay=0, tracelen=200):  # delay and tracelen in ms
     
+    trace = Trace()
+    
+    trg_time = sounding.trg_time
     ampl_time_rel2trg = sounding.ampl_time_rel2trg  # in secs
     ampl_scan_interval = sounding.ampl_scan_interval  # in secs
+    adc_scale_factor = asd_obj.general.adc_scale_factor  # used to convert values to [V]olts
+    
+    
     delay = delay/1000  # in secs
     tracelen = tracelen/1000  # in secs
     
-    # heave_correction_secs = heave_correction(sounding=sounding, asd_obj=asd_obj)
-    heave_correction_secs = attitude_integrate(sounding=sounding, asd_obj=asd_obj)
-    ampl_time_rel2trg_corr = ampl_time_rel2trg - heave_correction_secs
+    # Heave correction and equipment z offset correction
+    heave_correction_secs, rot_la = attitude_integrate(sounding=sounding, asd_obj=asd_obj)
+    ampl_time_rel2trg_corr = ampl_time_rel2trg - heave_correction_secs - asd_obj.installation.tx_z/asd_obj.general.sv_keel
 
     # Real part of the complex trace is an acoustic amplitude
     # sounding.data_array[:,0] - real part of the complex trace, amplitude vallues
     # sounding.data_array[:,1] - imag part of the complex trace
     complex = complex_trace(sounding.data_array[:,0], sounding.data_array[:,1])
-    envelope_data = np.abs(complex)
+    envelope_data = np.abs(complex*adc_scale_factor*1000)  # in mV milli-volts
     
     # Original Sample Times
     sample_times = [ampl_time_rel2trg_corr + x*ampl_scan_interval for x in np.arange(envelope_data.shape[0])]
@@ -352,13 +427,115 @@ def proc_trace(sounding: Sounding, asd_obj: ASDfile, delay=0, tracelen=200):  # 
     # Desired Sample Times
     desired_sample_times = np.arange(delay,delay+tracelen+ampl_scan_interval,ampl_scan_interval)
 
-    # Resample data again using desired Sample Times
+    # Make a func representing data
     func = interpolate.CubicSpline(sample_times, envelope_data, extrapolate=False)
     
-    # Data at desired Sample Times and replace numpy 'nan' values by 0
+    # Catch data at desired Sample Times and replace numpy 'nan' values by 0
     envelope_data_at_desired = np.nan_to_num(func(desired_sample_times))
     
-    return envelope_data_at_desired
+    
+    z_offset = int(asd_obj.installation.tx_z*100)
+    depth_obj = asd_obj.depths[1]
+    
+    if len(depth_obj.depth[:,0]) > 1:
+        depth_func = interpolate.CubicSpline(depth_obj.depth[:,1], depth_obj.depth[:,0], extrapolate=True)
+        sounding_depth = int((depth_func(trg_time+ampl_time_rel2trg) - asd_obj.installation.tx_z)*100)
+    else:
+        sounding_depth = int((depth_obj.depth[0,0]- asd_obj.installation.tx_z)*100)
+    
+    if asd_obj.position.is_valid:
+        crs_wgs84 = CRS.from_epsg(4326)
+        crs_xy = CRS.from_epsg(espg_num)
+        coord_transf = Transformer.from_crs(crs_wgs84, crs_xy, always_xy=True)
+        
+        
+        if len(asd_obj.position.latlon[:,2]) > 1:
+            lat_func = interpolate.CubicSpline(asd_obj.position.latlon[:,2], asd_obj.position.latlon[:,0])
+            lon_func = interpolate.CubicSpline(asd_obj.position.latlon[:,2], asd_obj.position.latlon[:,1])
+            
+            lat = lat_func(trg_time+ampl_time_rel2trg)
+            lon = lon_func(trg_time+ampl_time_rel2trg)
+            
+            x_coord, y_coord = coord_transf.transform(lon, lat)
+
+        else:
+            time = asd_obj.position.latlon[:,2][0]
+            lat = asd_obj.position.latlon[:,0][0]
+            lon = asd_obj.position.latlon[:,1][0]
+            
+            cog = asd_obj.speed_course.cog[:,0][0]
+            sog = asd_obj.speed_course.sog[:,0][0]
+            
+            time_diff = (trg_time+ampl_time_rel2trg) - time
+            dist = sog*time_diff
+            
+            x = np.cos(cog)*dist
+            y = np.sin(cog)*dist
+                
+            x_coord, y_coord = coord_transf.transform(lon, lat)
+            
+            x_coord = x_coord + x
+            y_coord = y_coord + y
+        
+        x_coord_td = x_coord + rot_la[0,0]
+        y_coord_td = y_coord + rot_la[0,1]
+        
+
+    else:
+        x_coord_td = 0
+        y_coord_td = 0
+    
+    
+    datetime_obj = datetime.fromtimestamp(trg_time+ampl_time_rel2trg, tz=timezone.utc)
+    trace.time = ampl_time_rel2trg_corr
+    trace.dt = ampl_scan_interval
+    trace.data = envelope_data_at_desired
+    
+    trace.header['TRACE_SEQUENCE_LINE'] = trace_num
+    trace.header['TRACE_SEQUENCE_FILE'] = trace_num
+    trace.header['FieldRecord'] = 1
+    trace.header['TraceNumber'] = 1
+    trace.header['EnergySourcePoint'] = trace_num
+    trace.header['TraceIdentificationCode'] = 1
+    trace.header['NSummedTraces'] = 1
+    trace.header['NStackedTraces'] = 1
+    trace.header['DataUse'] = 1
+    trace.header['ReceiverGroupElevation'] = z_offset
+    trace.header['SourceDepth'] = z_offset
+    trace.header['SourceWaterDepth'] = sounding_depth
+    trace.header['GroupWaterDepth'] = sounding_depth
+    trace.header['ElevationScalar'] = -100
+    trace.header['SourceGroupScalar'] = -100
+    
+    trace.header['SourceX'] = int(np.rint(x_coord_td*100))
+    trace.header['SourceY'] = int(np.rint(y_coord_td*100))
+    trace.header['GroupX'] = int(np.rint(x_coord_td*100))
+    trace.header['GroupY'] = int(np.rint(y_coord_td*100))
+    trace.header['CoordinateUnits'] = 1
+    
+    trace.header['DelayRecordingTime'] = int(np.rint(delay))
+    trace.header['TRACE_SAMPLE_COUNT'] = len(desired_sample_times)
+    trace.header['TRACE_SAMPLE_INTERVAL'] = int(np.rint(ampl_scan_interval*(10**6)))  # in microsecs
+    
+    trace.header['Correlated'] = 1
+    trace.header['SweepFrequencyStart'] = sounding.slf_freq
+    trace.header['SweepFrequencyEnd'] = sounding.slf_freq + sounding.freq_shift
+    trace.header['SweepLength'] = int(np.rint(sounding.pulse_len*1000))
+    trace.header['SweepType'] = 4
+    
+    trace.header['YearDataRecorded'] = datetime_obj.year
+    trace.header['DayOfYear'] = datetime_obj.day
+    trace.header['HourOfDay'] = datetime_obj.hour
+    trace.header['MinuteOfHour'] = datetime_obj.minute
+    trace.header['SecondOfMinute'] = datetime_obj.second
+    trace.header['TimeBaseCode'] = 4  # 4 - UTC
+    
+    trace.header['TraceValueMeasurementUnit'] = 3
+    
+    
+    
+    
+    return trace, envelope_data_at_desired
 
 
 def get_traces(idx_path):
