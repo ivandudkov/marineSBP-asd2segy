@@ -11,7 +11,6 @@ from asd import ASDfile
 from xml_classes import Sounding
 
 from numpy import cos, sin
-from pyproj import Proj, CRS, Transformer
 
 
 int_header = {'TRACE_SEQUENCE_LINE': 1, 
@@ -202,35 +201,7 @@ def mag_phase(complex_trace):
     phase_trace = np.angle(complex_trace, deg=True)
     
     return magnitude_trace, phase_trace
-
-def shift_data_to_zero_start(sample_array, data_array):
-    # As it turned out, the sample start time given
-    # relative to zero, i.e. sample_st/sample_dt is integer (like 198.999999 i.e. 199)
-    sample_st = sample_array[0]
-    sample_dt = sample_array[1] - sample_array[0]
-    
-    index_start = int(np.ceil(sample_st/sample_dt))
-    
-    sample_times = [sample_st + x*sample_dt for x in np.arange(data_array.shape[0])]
-    # sample_times_shifted = [x*sample_dt for x in np.arange(data_array.shape[0] + int(sample_st/sample_dt))]
-    
-    func = interpolate.CubicSpline(sample_times, data_array, extrapolate=True)
-    # shifted_data = func(sample_times_shifted[index_start:])
-    shifted_data = func(sample_array)
-    
-    print(data_array)
-    print(sample_times)
-    
-    print('______\n')
-    print('Shifted data:')
-    print(shifted_data)
-    print(sample_array)
-    
-    return shifted_data, index_start
         
-def shift_trace_by_heave():
-    pass
-
 def get_polar_form(z):
     # magnitude
     mag = np.abs(z)
@@ -247,34 +218,6 @@ def abs_trace(complex_trace):
     rel_angles = np.angle(complex_trace)
     
     return abs_value, rel_angles
-
-
-def heave_correction(sounding: Sounding, asd_obj: ASDfile, filter=False):
-    ampl_time_rel2trg = sounding.ampl_time_rel2trg  # in secs
-    trg_time = sounding.trg_time  # posix seconds, absolute time
-    sv_keel = asd_obj.general.sv_keel  # m/s
-    
-
-    heave = asd_obj.motion.heave  # [[m],[posix seconds]]
-    heave_quality = asd_obj.motion.quality[:-1] 
-    
-    # Filter heave: in progress
-    def filter_heave(heave, heave_quality):
-        for i, qual in enumerate(heave_quality):
-            if qual == 'p':
-                pass
-            else:
-                pass
-                heave.pop(i)
-        
-        # Filter heave: in progress
-
-    heave_func = interpolate.CubicSpline(heave[:,1], heave[:,0], extrapolate=True)
-    heave_at_ampl_time = heave_func(trg_time + ampl_time_rel2trg)
-    heave_correction_secs = heave_at_ampl_time*2/sv_keel
-    
-    return heave_correction_secs
-    
 
 def euler_angle_rot_matrix(roll, pitch, yaw):
     # Euler Angle Rotation Matrices at event
@@ -310,6 +253,20 @@ def attitude_integrate(sounding: Sounding, asd_obj: ASDfile):
     # Heave part
     heave = asd_obj.motion.heave  # [[m],[posix seconds]]
     heave_quality = asd_obj.motion.quality[:-1] 
+    
+    
+        # Filter heave: in progress
+    def filter_heave(heave, heave_quality):
+        for i, qual in enumerate(heave_quality):
+            if qual == 'p':
+                pass
+            else:
+                pass
+                heave.pop(i)
+        
+        # Filter heave: in progress
+    
+    
     heave_func = interpolate.interp1d(heave[:,1], heave[:,0], fill_value=0)
     heave_at_ampl_time = heave_func(trg_time + ampl_time_rel2trg)
     heave_correction_secs = heave_at_ampl_time/sv_keel*2
@@ -398,28 +355,30 @@ def get_pos_acf(idx_path):
     
 
 # функция proc_trace должна выдать массивы и заголовки, готовые для записи seg-y в segyio
-def proc_trace(trace_num, espg_num, sounding: Sounding, asd_obj: ASDfile, delay=0, tracelen=200):  # delay and tracelen in ms
+def proc_trace(trace_num, coord_transf, sounding: Sounding, asd_obj: ASDfile, delay, tracelen):  # delay and tracelen in ms
     
     trace = Trace()
     
     trg_time = sounding.trg_time
+    
     ampl_time_rel2trg = sounding.ampl_time_rel2trg  # in secs
     ampl_scan_interval = sounding.ampl_scan_interval  # in secs
     adc_scale_factor = asd_obj.general.adc_scale_factor  # used to convert values to [V]olts
-    
+    first_sample_time = trg_time + ampl_time_rel2trg
     
     delay = delay/1000  # in secs
     tracelen = tracelen/1000  # in secs
     
     # Heave correction and equipment z offset correction
     heave_correction_secs, rot_la = attitude_integrate(sounding=sounding, asd_obj=asd_obj)
+
     ampl_time_rel2trg_corr = ampl_time_rel2trg - heave_correction_secs - asd_obj.installation.tx_z/asd_obj.general.sv_keel
 
     # Real part of the complex trace is an acoustic amplitude
-    # sounding.data_array[:,0] - real part of the complex trace, amplitude vallues
+    # sounding.data_array[:,0] - real part of the complex trace
     # sounding.data_array[:,1] - imag part of the complex trace
     complex = complex_trace(sounding.data_array[:,0], sounding.data_array[:,1])
-    envelope_data = np.abs(complex*adc_scale_factor*1000)  # in mV milli-volts
+    envelope_data = np.abs(complex*adc_scale_factor*1000)  # convert counts to [mV] (milli-volts)
     
     # Original Sample Times
     sample_times = [ampl_time_rel2trg_corr + x*ampl_scan_interval for x in np.arange(envelope_data.shape[0])]
@@ -438,23 +397,18 @@ def proc_trace(trace_num, espg_num, sounding: Sounding, asd_obj: ASDfile, delay=
     depth_obj = asd_obj.depths[1]
     
     if len(depth_obj.depth[:,0]) > 1:
-        depth_func = interpolate.CubicSpline(depth_obj.depth[:,1], depth_obj.depth[:,0], extrapolate=True)
-        sounding_depth = int((depth_func(trg_time+ampl_time_rel2trg) - asd_obj.installation.tx_z)*100)
+        depth_func = interpolate.PchipInterpolator(depth_obj.depth[:,1], depth_obj.depth[:,0], extrapolate=True)
+        sounding_depth = int((depth_func(first_sample_time) - asd_obj.installation.tx_z)*100)
     else:
         sounding_depth = int((depth_obj.depth[0,0]- asd_obj.installation.tx_z)*100)
     
     if asd_obj.position.is_valid:
-        crs_wgs84 = CRS.from_epsg(4326)
-        crs_xy = CRS.from_epsg(espg_num)
-        coord_transf = Transformer.from_crs(crs_wgs84, crs_xy, always_xy=True)
-        
-        
         if len(asd_obj.position.latlon[:,2]) > 1:
-            lat_func = interpolate.CubicSpline(asd_obj.position.latlon[:,2], asd_obj.position.latlon[:,0])
-            lon_func = interpolate.CubicSpline(asd_obj.position.latlon[:,2], asd_obj.position.latlon[:,1])
+            lat_func = interpolate.PchipInterpolator(asd_obj.position.latlon[:,2], asd_obj.position.latlon[:,0], extrapolate=True)
+            lon_func = interpolate.PchipInterpolator(asd_obj.position.latlon[:,2], asd_obj.position.latlon[:,1], extrapolate=True)
             
-            lat = lat_func(trg_time+ampl_time_rel2trg)
-            lon = lon_func(trg_time+ampl_time_rel2trg)
+            lat = lat_func(first_sample_time)
+            lon = lon_func(first_sample_time)
             
             x_coord, y_coord = coord_transf.transform(lon, lat)
 
@@ -466,7 +420,7 @@ def proc_trace(trace_num, espg_num, sounding: Sounding, asd_obj: ASDfile, delay=
             cog = asd_obj.speed_course.cog[:,0][0]
             sog = asd_obj.speed_course.sog[:,0][0]
             
-            time_diff = (trg_time+ampl_time_rel2trg) - time
+            time_diff = (first_sample_time) - time
             dist = sog*time_diff
             
             x = np.cos(cog)*dist
@@ -486,10 +440,10 @@ def proc_trace(trace_num, espg_num, sounding: Sounding, asd_obj: ASDfile, delay=
         y_coord_td = 0
     
     
-    datetime_obj = datetime.fromtimestamp(trg_time+ampl_time_rel2trg, tz=timezone.utc)
+    datetime_obj = datetime.fromtimestamp(first_sample_time, tz=timezone.utc)
     trace.time = ampl_time_rel2trg_corr
     trace.dt = ampl_scan_interval
-    trace.data = envelope_data_at_desired
+    trace.data = np.float32(envelope_data_at_desired)
     
     trace.header['TRACE_SEQUENCE_LINE'] = trace_num
     trace.header['TRACE_SEQUENCE_FILE'] = trace_num
@@ -533,16 +487,14 @@ def proc_trace(trace_num, espg_num, sounding: Sounding, asd_obj: ASDfile, delay=
     trace.header['TraceValueMeasurementUnit'] = 3
     
     
-    
-    
-    return trace, envelope_data_at_desired
+    return trace
 
 
-def get_traces(idx_path):
-    asd_obj_list = ASDfile.create_from_idx_file(idx_path)
-    
+def get_traces(idx_path, coord_transf, delay=0, tracelen=250):  # delay and tracelen in ms
+
     acf_path = idx_path[:-4]
-    acf_name = os.path.basename(acf_path)
+    
+    asd_obj_list = ASDfile.create_from_idx_file(idx_path)
     
     traces = []
     
@@ -550,29 +502,17 @@ def get_traces(idx_path):
     with open(acf_path, 'rb') as f1:
         buffer = f1.read()
     
-
-    delay = 50  # ms
-    trace_len = 250  # ms
-
-    num_of_traces = 0
-    dt = 0.082
+    trace_num = 1
     
-    
-    for obj in asd_obj_list[0:5]:
-        if num_of_traces > 1800:
-            break
-        else:
-            asd.parse_xml_header(obj, buffer)
-            asd.parse_bin_header(obj, buffer)
+    obj: ASDfile
+    for obj in asd_obj_list[:]:
+        asd.parse_xml_header(obj, buffer)
+        asd.parse_bin_header(obj, buffer)
+
+        for sounding in obj.soundings[:]:
+            trace = proc_trace(trace_num, coord_transf, sounding, obj, tracelen=tracelen, delay=delay)
+            trace.acf = os.path.basename(acf_path)
+            traces.append(trace)
+            trace_num += 1
             
-            
-            for sounding in obj.soundings[:]:
-                trace = Trace()
-                
-                ampls, _ = proc_trace(sounding, obj, trace, tracelen=trace_len, delay=delay)
-                
-                trace.dt = sounding.ampl_scan_interval*1000  # in ms
-                trace.data = ampls
-                
-                
-                traces.append(trace)
+    return traces
