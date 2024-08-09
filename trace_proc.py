@@ -267,23 +267,23 @@ def attitude_integrate(sounding: Sounding, asd_obj: ASDfile):
         # Filter heave: in progress
     
     
-    heave_func = interpolate.interp1d(heave[:,1], heave[:,0], fill_value=0)
+    heave_func = interpolate.CubicSpline(heave[:,1], heave[:,0], extrapolate=True)
     heave_at_ampl_time = heave_func(trg_time + ampl_time_rel2trg)
     heave_correction_secs = heave_at_ampl_time/sv_keel*2
     
     # Roll
     roll = asd_obj.motion.roll
-    roll_func = interpolate.interp1d(roll[:,1], roll[:,0], fill_value=0)
+    roll_func = interpolate.CubicSpline(roll[:,1], roll[:,0], extrapolate=True)
     roll_at_ampl_time = roll_func(trg_time + ampl_time_rel2trg)
     
     # Pitch
     pitch = asd_obj.motion.pitch
-    pitch_func = interpolate.interp1d(pitch[:,1], pitch[:,0], fill_value=0)
+    pitch_func = interpolate.CubicSpline(pitch[:,1], pitch[:,0], extrapolate=True)
     pitch_at_ampl_time = pitch_func(trg_time + ampl_time_rel2trg)
     
     # Yaw
     yaw = asd_obj.heading.heading
-    yaw_func = interpolate.interp1d(yaw[:,1], yaw[:,0], fill_value=0)
+    yaw_func = interpolate.CubicSpline(yaw[:,1], yaw[:,0], extrapolate=True)
     yaw_at_ampl_time = yaw_func(trg_time + ampl_time_rel2trg)
     
     rot_matrix = euler_angle_rot_matrix(roll_at_ampl_time, pitch_at_ampl_time, yaw_at_ampl_time)
