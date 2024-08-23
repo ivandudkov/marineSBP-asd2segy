@@ -379,6 +379,7 @@ def proc_trace(trace_num, coord_transf, sounding: Sounding, asd_obj: ASDfile, de
     # sounding.data_array[:,1] - imag part of the complex trace
     complex = complex_trace(sounding.data_array[:,0], sounding.data_array[:,1])
     envelope_data = np.abs(complex*adc_scale_factor*1000)  # convert counts to [mV] (milli-volts)
+    # envelope_data = sounding.data_array[:,0] + sounding.data_array[:,1]
     
     # Original Sample Times
     sample_times = [ampl_time_rel2trg_corr + x*ampl_scan_interval for x in np.arange(envelope_data.shape[0])]
@@ -508,11 +509,20 @@ def get_traces(idx_path, coord_transf, delay=0, tracelen=250):  # delay and trac
     for obj in asd_obj_list[:]:
         asd.parse_xml_header(obj, buffer)
         asd.parse_bin_header(obj, buffer)
-
-        for sounding in obj.soundings[:]:
-            trace = proc_trace(trace_num, coord_transf, sounding, obj, tracelen=tracelen, delay=delay)
-            trace.acf = os.path.basename(acf_path)
-            traces.append(trace)
-            trace_num += 1
+        
+        # find pulse
+        
+        
+        
+        
+        for sounding in obj.soundings:
+            try:
+                trace = proc_trace(trace_num, coord_transf, sounding, obj, tracelen=tracelen, delay=delay)
+                trace.acf = os.path.basename(acf_path)
+                traces.append(trace)
+                trace_num += 1
+            
+            except:
+                pass
             
     return traces
