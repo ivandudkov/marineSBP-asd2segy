@@ -1,6 +1,6 @@
 import numpy as np
 from scipy import signal, interpolate
-from scipy.fft import fft, ifft
+from scipy.fft import fft, ifft, irfft
 import matplotlib.pyplot as plt
 import os
 from datetime import datetime, timezone
@@ -379,7 +379,6 @@ def proc_trace(trace_num, coord_transf, sounding: Sounding, asd_obj: ASDfile, de
     # sounding.data_array[:,1] - imag part of the complex trace
     complex = complex_trace(sounding.data_array[:,0], sounding.data_array[:,1])
     envelope_data = np.abs(complex*adc_scale_factor*1000)  # convert counts to [mV] (milli-volts)
-    # envelope_data = sounding.data_array[:,0] + sounding.data_array[:,1]
     
     # Original Sample Times
     sample_times = [ampl_time_rel2trg_corr + x*ampl_scan_interval for x in np.arange(envelope_data.shape[0])]
