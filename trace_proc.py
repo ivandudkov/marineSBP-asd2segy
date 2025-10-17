@@ -94,6 +94,32 @@ int_header = {'TRACE_SEQUENCE_LINE': 1,
 
 
 class Trace:
+    """Lightweight container for a single seismic/acoustic trace and header.
+
+    The class groups raw sample data with a SEG-Y‑style trace header so that
+    traces can be produced from Parasound P70 inputs and later exported. Field
+    names in `header` mirror those in `int_header` (byte offsets mapping) and
+    are populated by processing routines such as `proc_trace()`.
+
+    Attributes
+    ----------
+    header : dict[str, int]
+        SEG-Y trace header values keyed by field name. Values are integers
+        and use the same semantics/units as SEG-Y (e.g., coordinates scaled
+        by `ElevationScalar`/`SourceGroupScalar`, sample interval in µs).
+    data : numpy.ndarray
+        Trace samples as a 1‑D array. In this project, typically the envelope
+        of the complex trace in millivolts (float32) after resampling/windowing.
+    dt : float
+        Sample interval in seconds for `data` (header stores microseconds).
+    time : float
+        Start time of the trace relative to trigger in seconds (used when
+        constructing sample timestamps alongside `dt`).
+    acf : str
+        Source ACF filename associated with this trace (if available).
+    asd : str
+        Source ASD filename associated with this trace (if available).
+    """
     
     def __init__(self) -> None:
         self.header = {'TRACE_SEQUENCE_LINE': 0, 
@@ -175,7 +201,7 @@ class Trace:
                              'ShotPointScalar': 0, 
                              'TraceValueMeasurementUnit': 0}
         
-        self.data = []
+        self.data = np.array((0,0))
         self.dt = 0  # in ms
         self.time = 0  # POSIX time tag
         self.acf = ''
@@ -245,6 +271,42 @@ def euler_angle_rot_matrix(roll, pitch, yaw):
 
 
 def attitude_integrate(sounding: Sounding, asd_obj: ASDfile):
+    """Compute two-way travel-time correction from attitude and return rotated TX lever arm.
+
+    This function interpolates platform motion (heave, roll, pitch) and heading (yaw)
+    to the sounding's acquisition time, builds a rotation matrix, and applies it to the
+    transmit transducer lever-arm. It then computes the combined vertical correction
+    (heave plus rotation-induced z-offset change) and converts it to a two-way travel-time
+    correction using the sound speed at the keel. The returned time correction is intended
+    to be subtracted from the raw amplitude start time.
+
+    Parameters
+    ----------
+    sounding : Sounding
+        Sounding metadata providing `ampl_time_rel2trg` (s, relative to trigger)
+        and `trg_time` (POSIX s, absolute trigger time).
+    asd_obj : ASDfile
+        Parsed ASD context providing:
+        - `general.sv_keel` (m/s): sound speed at the keel
+        - `motion.heave`, `motion.roll`, `motion.pitch`: Nx2 arrays [value, POSIX s]
+        - `heading.heading`: Nx2 array [yaw, POSIX s]
+        - `installation.tx_x`, `tx_y`, `tx_z`: TX lever-arm components (m)
+
+    Returns
+    -------
+    tuple[float, numpy.ndarray]
+        - heave_correction_secs: Two-way time correction in seconds (to subtract).
+        - rotated_lever_arm: 3x1 numpy vector of the TX lever-arm after applying
+          the current roll/pitch/yaw rotation.
+
+    Notes
+    -----
+    - Interpolation uses `scipy.interpolate.CubicSpline` with `extrapolate=True`.
+    - Angles are expected in radians; rotation order is yaw (Z) → pitch (Y) → roll (X),
+      i.e., Rz @ Ry @ Rx.
+    - The correction accounts for both platform heave and the change in TX z-offset
+      due to attitude (lever-arm rotation), and applies a factor of 2 for the two-way path.
+    """
     
     ampl_time_rel2trg = sounding.ampl_time_rel2trg  # in secs
     trg_time = sounding.trg_time  # posix seconds, absolute time
@@ -300,7 +362,7 @@ def attitude_integrate(sounding: Sounding, asd_obj: ASDfile):
     return heave_correction_secs, rotated_lever_arm
 
 def get_pos_acf(idx_path):
-    """ A function used for operative track creation of the
+    """ A function used for fast track creation of the
     raw Parasound P70 data
 
     Parameters
