@@ -510,7 +510,8 @@ def proc_trace(trace_num, coord_transf, sounding: Sounding, asd_obj: ASDfile, de
     trace.header['TRACE_SEQUENCE_LINE'] = trace_num
     trace.header['TRACE_SEQUENCE_FILE'] = trace_num
     trace.header['FieldRecord'] = 1
-    trace.header['TraceNumber'] = 1
+    # TODO: implement trace number counting
+    trace.header['TraceNumber'] = 1  
     trace.header['EnergySourcePoint'] = trace_num
     trace.header['TraceIdentificationCode'] = 1
     trace.header['NSummedTraces'] = 1
