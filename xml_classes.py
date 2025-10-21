@@ -193,7 +193,7 @@ class Sounding:
         
         # PulseProfiles
         self.prof_subident_no = int()
-        self.prof_shading = bool()
+        self.prof_shading = int()
         self.prof_pulse_no_ref = int()
         self.prof_pulse_correl = bool()
         self.prof_bandwidth = int()

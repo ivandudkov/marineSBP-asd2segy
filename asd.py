@@ -29,6 +29,7 @@ class ASDfile():
     
     def __init__(self) -> None:
         self.name = ''
+        self.acf_name = ''
         self.is_grouped_acf = False
         self.acf_fpath = ''
         self.idx_fpath = ''

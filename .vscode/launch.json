@@ -1,0 +1,38 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+// .vscode/launch.json
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Visualize SEG-Y (image)",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/test_segy_open.py",
+      "args": [
+        "C:/Data/P70_Converter_Testing/PS3SLF_2024-07-07T174231Z_07793648.sgy",
+        "--kind", "image",
+        "--clip", "99.5",
+        "--outfile", "${workspaceFolder}/temp/image.png"
+      ],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Visualize SEG-Y (both, wiggles)",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/temp/test_segy_open.py",
+      "args": [
+        "C:/Data/P70_Converter_Testing/PS3SLF_2024-07-07T174231Z_07793648.sgy",
+        "--kind", "both",
+        "--stride", "3",
+        "--wiggle-scale", "0.5",
+        "--outfile", "${workspaceFolder}/both.png"
+      ],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}

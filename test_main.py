@@ -8,6 +8,8 @@ import file_ext_search as fes
 
 import asd
 import trace_proc
+from trace_proc import int_header
+import os
 
 
 class MySpec(object):
@@ -29,17 +31,9 @@ acf_file = r'C:\YandexDisk\MyProjects\InspectingP70Data\P70_data\SEB\Prof2_abp56
 
 idx_files_2 = [idx_file2, idx_file]
 
-# datapath = r'D:\ABP49_Processing\abp49_GdGot'
-# idx_files_list = fes.file_ext_search('.idx', datapath)
-
 # OLD STABLE VERSION
 
 path = r'C:\Data\P70_Converter_Testing'
-from trace_proc import int_header
-
-
-import threading
-import os
 
 # Coords
 espg_code = 32634  # UTM34N
@@ -65,7 +59,7 @@ def task(idx_files):
         myspec.tracecount = len(traces)
         myspec.samples = np.arange(delay,delay+tracelen+traces[0].dt*1000,traces[0].dt*1000)
         
-        fname = traces[0].acf[:-8] + '.sgy'
+        fname = traces[0].acf[:-8] + '_v3.sgy'
         save_to = os.path.join(path, fname)
 
         with segyio.create(save_to, myspec) as f5:
@@ -79,19 +73,19 @@ def task(idx_files):
 task(idx_files=idx_files_2[1:2])
 
 # POS EXPORT FROM ACF
-save_to = r'C:\Data\test\ABP49_SLF.csv'
+# save_to = r'C:\Data\test\ABP49_SLF.csv'
 
-for idx_file in idx_files:
-    pos_strings = trace_proc.get_pos_acf(idx_file)
+# for idx_file in idx_files:
+#     pos_strings = trace_proc.get_pos_acf(idx_file)
     
     
-    if os.path.exists(save_to):
-        with open(save_to, 'a+') as f9:
-            for line in pos_strings:
-                f9.write(f'{line}\n')
-    else:
-        with open(save_to, 'w') as f9:
-            f9.write('num,acf,asd,ISOdatetime,POSIXsec,lat,lon\n')
+#     if os.path.exists(save_to):
+#         with open(save_to, 'a+') as f9:
+#             for line in pos_strings:
+#                 f9.write(f'{line}\n')
+#     else:
+#         with open(save_to, 'w') as f9:
+#             f9.write('num,acf,asd,ISOdatetime,POSIXsec,lat,lon\n')
             
-            for line in pos_strings:
-                f9.write(f'{line}\n')
+#             for line in pos_strings:
+#                 f9.write(f'{line}\n')

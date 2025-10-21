@@ -1,6 +1,8 @@
 import numpy as np
 from scipy import signal, interpolate
 from scipy.fft import fft, ifft, irfft
+from scipy.signal import hilbert, savgol_filter
+
 import matplotlib.pyplot as plt
 import os
 from datetime import datetime, timezone
@@ -440,7 +442,33 @@ def proc_trace(trace_num, coord_transf, sounding: Sounding, asd_obj: ASDfile, de
     # sounding.data_array[:,0] - real part of the complex trace
     # sounding.data_array[:,1] - imag part of the complex trace
     complex = complex_trace(sounding.data_array[:,0], sounding.data_array[:,1])
+    
+    a = np.abs(complex)*adc_scale_factor*1000
+    
+    theta = np.unwrap(np.angle(complex*adc_scale_factor*1000))
+    dt_fs = 1 / sounding.slf_freq
+    
+    f_inst = np.empty_like(theta)
+    f_inst[1:] = (theta[1:] - theta[:-1]) / (2*np.pi*dt_fs)
+    f_inst[0] = f_inst[1]
+    
+    
+    win = 2
+    poly = 1
+    
+    # сглаженная «несущая» (локальная)
+    # подберите окно win и степень poly под ваш шум
+    f_carrier_t = savgol_filter(f_inst, window_length=win, polyorder=poly, mode='interp')
+
+    # глобальная несущая — амплитудно-взвешенное среднее
+    eps = 1e-12
+    f0 = np.sum(a * f_inst) / (np.sum(a) + eps)
+    
+    
     envelope_data = np.abs(complex*adc_scale_factor*1000)  # convert counts to [mV] (milli-volts)
+    
+    #TESTING TESTING TESTING!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    envelope_data = f_carrier_t
     
     # Original Sample Times
     sample_times = [ampl_time_rel2trg_corr + x*ampl_scan_interval for x in np.arange(envelope_data.shape[0])]

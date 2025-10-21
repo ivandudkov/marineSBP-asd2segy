@@ -1,4 +1,7 @@
+
+# User-Defined
 .*sgy
+temp/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
