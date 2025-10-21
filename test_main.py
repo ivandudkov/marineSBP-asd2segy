@@ -22,19 +22,24 @@ class MySpec(object):
         self.format = 1  # 1 - IBM Float; 5 - 4-byte IEEE float
         self.endian = 'big'
 
-idx_file2 = r'C:\YandexDisk\MyProjects\InspectingP70Data\P70_data\SEB\PS3SLF_2021-09-17T110351Z_00047728.asd.acf.idx'
-acf_file2 = r'C:\YandexDisk\MyProjects\InspectingP70Data\P70_data\SEB\PS3SLF_2021-09-17T110351Z_00047728.asd.acf'
+# idx_file2 = r'C:\YandexDisk\MyProjects\InspectingP70Data\P70_data\SEB\PS3SLF_2021-09-17T110351Z_00047728.asd.acf.idx'
+# acf_file2 = r'C:\YandexDisk\MyProjects\InspectingP70Data\P70_data\SEB\PS3SLF_2021-09-17T110351Z_00047728.asd.acf'
 
+# idx_file = r'C:\YandexDisk\MyProjects\InspectingP70Data\P70_data\SEB\Prof2_abp56_Gd\PS3SLF_2024-07-07T174231Z_07793648.asd.acf.idx'
+# acf_file = r'C:\YandexDisk\MyProjects\InspectingP70Data\P70_data\SEB\Prof2_abp56_Gd\PS3SLF_2024-07-07T174231Z_07793648.asd.acf'
 
-idx_file = r'C:\YandexDisk\MyProjects\InspectingP70Data\P70_data\SEB\Prof2_abp56_Gd\PS3SLF_2024-07-07T174231Z_07793648.asd.acf.idx'
-acf_file = r'C:\YandexDisk\MyProjects\InspectingP70Data\P70_data\SEB\Prof2_abp56_Gd\PS3SLF_2024-07-07T174231Z_07793648.asd.acf'
+idx_file2 = r'D:\YandexDisk\MyProjects\InspectingP70Data\P70_data\SEB\PS3SLF_2021-09-17T110351Z_00047728.asd.acf.idx'
+acf_file2 = r'D:\YandexDisk\MyProjects\InspectingP70Data\P70_data\SEB\PS3SLF_2021-09-17T110351Z_00047728.asd.acf'
+
+idx_file = r'D:\YandexDisk\MyProjects\InspectingP70Data\P70_data\SEB\Prof2_abp56_Gd\PS3SLF_2024-07-07T174231Z_07793648.asd.acf.idx'
+acf_file = r'D:\YandexDisk\MyProjects\InspectingP70Data\P70_data\SEB\Prof2_abp56_Gd\PS3SLF_2024-07-07T174231Z_07793648.asd.acf'
 
 idx_files_2 = [idx_file2, idx_file]
 
 # OLD STABLE VERSION
 
 path = r'C:\Data\P70_Converter_Testing'
-
+path = r'D:\Data\P70_Converter_Testing'
 # Coords
 espg_code = 32634  # UTM34N
 crs_wgs84 = CRS.from_epsg(4326)
@@ -59,9 +64,8 @@ def task(idx_files):
         myspec.tracecount = len(traces)
         myspec.samples = np.arange(delay,delay+tracelen+traces[0].dt*1000,traces[0].dt*1000)
         
-        fname = traces[0].acf[:-8] + '_v3.sgy'
+        fname = traces[0].acf[:-8] + '_v9_envelope.sgy'
         save_to = os.path.join(path, fname)
-
         with segyio.create(save_to, myspec) as f5:
             for num, trace in enumerate(traces):
                 f5.trace[num] = trace.data

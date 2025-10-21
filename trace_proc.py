@@ -444,31 +444,79 @@ def proc_trace(trace_num, coord_transf, sounding: Sounding, asd_obj: ASDfile, de
     complex = complex_trace(sounding.data_array[:,0], sounding.data_array[:,1])
     
     a = np.abs(complex)*adc_scale_factor*1000
+    z = complex*adc_scale_factor*1000
     
-    theta = np.unwrap(np.angle(complex*adc_scale_factor*1000))
-    dt_fs = 1 / sounding.slf_freq
+    # Carrier Frequency 
+    theta = np.unwrap(np.angle(complex))
+    dt_fs = 1 / ampl_scan_interval
     
     f_inst = np.empty_like(theta)
     f_inst[1:] = (theta[1:] - theta[:-1]) / (2*np.pi*dt_fs)
     f_inst[0] = f_inst[1]
     
     
-    win = 2
-    poly = 1
+    win = 21
+    poly = 7
     
     # сглаженная «несущая» (локальная)
     # подберите окно win и степень poly под ваш шум
-    f_carrier_t = savgol_filter(f_inst, window_length=win, polyorder=poly, mode='interp')
+    x3 = savgol_filter(f_inst*adc_scale_factor*1000, window_length=win, polyorder=poly, mode='interp')
 
     # глобальная несущая — амплитудно-взвешенное среднее
     eps = 1e-12
     f0 = np.sum(a * f_inst) / (np.sum(a) + eps)
     
+    dt_hz = 1 / ampl_scan_interval
+    # Base SIGNAL
+    x1 = np.real(complex*adc_scale_factor*1000 * np.exp(1j*2*np.pi*sounding.slf_freq/dt_hz))
+    
+    phi0 = np.deg2rad(-90)   # например, -90° для zero-phase
+    x2 = np.real(z * np.exp(-1j * phi0))
+
+    x4 = np.real(complex)
+    
     
     envelope_data = np.abs(complex*adc_scale_factor*1000)  # convert counts to [mV] (milli-volts)
     
+    
+    
+    def analyze_trace(z, Fs):
+        N = len(z)
+        freqs = np.fft.fftfreq(N, d=1/Fs)  # ось частот
+        Z = np.fft.fft(z)
+        amplitude_spectrum = np.abs(np.fft.fftshift(Z))
+        freq_axis = np.fft.fftshift(freqs)
+
+        # построение
+        plt.figure(figsize=(10,5))
+        plt.plot(freq_axis, amplitude_spectrum)
+        plt.title("Амплитудный спектр комплексной сеймотрассы")
+        plt.xlabel("Частота, Гц")
+        plt.ylabel("|Z(f)|")
+        plt.grid(True)
+        plt.show()
+
+        # определим положение максимума
+        fc_est = freq_axis[np.argmax(amplitude_spectrum)]
+        print(f"Пик спектра ≈ {fc_est:.2f} Гц")
+
+        # интерпретация
+        if abs(fc_est) < Fs * 0.05:   # пик около 0 Гц
+            print("→ Похоже, сигнал демодулирован (baseband). Нужно вернуть несущую.")
+        else:
+            print("→ Сигнал уже содержит несущую частоту, можно брать Re(z).")
+    
+    # analyze_trace(complex, dt_hz)
+    
+    Nt = z.shape[0]
+    n = np.arange(Nt)
+    fc = sounding.slf_freq
+    Fs = 1 / ampl_scan_interval
+    carrier = np.exp(1j * 2*np.pi * fc * n / Fs)
+    x5 = np.real(z * carrier)
     #TESTING TESTING TESTING!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    envelope_data = f_carrier_t
+    # envelope_data = f_carrier_t
+    # envelope_data = x5
     
     # Original Sample Times
     sample_times = [ampl_time_rel2trg_corr + x*ampl_scan_interval for x in np.arange(envelope_data.shape[0])]
