@@ -6,11 +6,10 @@ import numpy as np
 
 
 
-import idxfile
-
-from xml_classes import Installation, MotionData, HeadingData,\
-                             PositionData, SpeedCourseData, DepthData,\
-                             PS3Config, GeneralSettings, Sounding, PulseTarget
+from . import idxfile
+from .xml_classes import Installation, MotionData, HeadingData, \
+    PositionData, SpeedCourseData, DepthData, \
+    PS3Config, GeneralSettings, Sounding, PulseTarget
 
 
 header_decoder = {'bin_sep': struct.Struct('>4s'),
@@ -68,8 +67,7 @@ class ASDfile():
         
     def get_xml_size(self, buffer):
         asd_file_buffer = buffer[self.start_byte:self.end_byte+1]
-        xml_size = xml_size(asd_file_buffer)
-        self.xml_size = xml_size
+        self.xml_size = get_xml_size(asd_file_buffer)
         
     def get_binary_size(self):
         if self.xml_size != 0:
@@ -115,7 +113,7 @@ def get_xml_size(buffer):
     while loop:
         try:
             buffer[xml_size:xml_size+1].decode(encoding='utf-8', errors='strict')
-        except:
+        except UnicodeDecodeError:
             loop = False
         else:
             xml_size += 1
@@ -475,7 +473,6 @@ def parse_bin_header(asd_obj: ASDfile, buffer):
     if len(asd_obj.soundings) == no_of_soundings:
         pass
     else:
-        print(asd_obj.soundings)
         raise RuntimeError('Number of soundings does not equal num of sounding objects!')
     
     def read_bin_header(buffer_pos, buffer, sounding_obj: Sounding):

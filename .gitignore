@@ -1,7 +1,14 @@
 
-# User-Defined
-.*sgy
+# Project data and local outputs
+.vscode/
 temp/
+outputs/
+*.acf
+*.asd
+*.idx
+*.sgy
+*.segy
+*.csv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
